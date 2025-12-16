@@ -1,0 +1,32 @@
+{
+  "name": "ecmcdn",
+  "id": "ecmcdn",
+  "description": "project created with CLI automation",
+  "sourceCode": [
+    {
+      "source": {
+        "s3": {
+          "bucketName": "aws-codestar-us-east-1-161174596715-releases",
+          "bucketKey": "ecmcdn-src.zip"
+        }
+      },
+      "destination": {
+        "codeCommit": {
+          "name": "ecmcdn"
+        }
+      }
+    }
+  ],
+  "toolchain": {
+    "source": {
+      "s3": {
+        "bucketName": "aws-codestar-us-east-1-161174596715-releases",
+        "bucketKey": "ecmcdn-toolchain.yml"
+      }
+    },
+    "roleArn": "arn:aws:iam::161174596715:role/service-role/aws-codestart-service-role",
+    "stackParameters": {
+      "ProjectId": "ecmcdn"
+    }
+  }
+}

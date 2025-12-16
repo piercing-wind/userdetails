@@ -1,0 +1,32 @@
+{
+  "name": "munprint",
+  "id": "munprint",
+  "description": "project created with CLI automation",
+  "sourceCode": [
+    {
+      "source": {
+        "s3": {
+          "bucketName": "aws-codestar-us-east-1-385902643987-releases",
+          "bucketKey": "munprint-src.zip"
+        }
+      },
+      "destination": {
+        "codeCommit": {
+          "name": "munprint"
+        }
+      }
+    }
+  ],
+  "toolchain": {
+    "source": {
+      "s3": {
+        "bucketName": "aws-codestar-us-east-1-385902643987-releases",
+        "bucketKey": "munprint-toolchain.yml"
+      }
+    },
+    "roleArn": "arn:aws:iam::385902643987:role/service-role/aws-codestart-service-role",
+    "stackParameters": {
+      "ProjectId": "munprint"
+    }
+  }
+}

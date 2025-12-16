@@ -1,0 +1,19 @@
+{
+  "Parameters": {
+    "Namespace": "userdetails",
+    "Environment": "dev",
+    "Stage": "dev",
+    "ProjectId": "userdetails",
+    "LamdaFunctionSSMParameter": "/userdetails/dev/lambdas/updateCounty",
+    "ObsvEmailAlramSNSSSMParameter": "/userdetails/dev/SNS/ObservabilityEmailAlarmSnsTopic",
+    "ErrorThreshold": "1",
+    "BillingThreshold": "100",
+    "InvocationThreshold": "20",
+    "DurationThreshold": "36000",
+    "ConcurrentExecutionsThreshold": "5",
+    "ResourceName": "updateConfig"
+  },
+  "Tags": {
+    "awscodestar:projectArn": "arn:$PARTITION$:codestar:$AWS_REGION$:$ACCOUNT_ID$:project/$PROJECT_ID$"
+  }
+}

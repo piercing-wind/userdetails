@@ -1,0 +1,548 @@
+AWSTemplateFormatVersion: 2010-09-09
+Transform:
+  - AWS::Serverless-2016-10-31
+
+# throws: AWS CodeStar encountered an error while handling your request: Rate exceeded
+
+Parameters:
+  Environment:
+    Type: String
+    Description: Environment Name for Deployment
+  Namespace:
+    Type: String
+    Description: Namespace information for Deployment
+  ProjectId:
+    Type: String
+    Description: CodeStar projectId used to associate new resources to team members
+  CodeDeployRole:
+    Type: String
+    Description: IAM role to allow AWS CodeDeploy to manage deployment of AWS Lambda Functions
+  Stage:
+    Type: String
+    Description: The name for a project pipeline stage, such as Staging or Prod, for which resources are provisioned and deployed.
+    Default: ""
+  TIMEDELTAPERIOD:
+    Type: String
+    Description: days or minutes or hours or weeks
+    Default: "minutes"
+  TIMEDELTAVALUE:
+    Type: Number
+    Description: integer to be calculated with TIMEDELTA_PERIOD
+    Default: "5"
+  TestcasemgmtDataGetLambda:
+    Type: String
+    Description: This is source userdetails data get lambda name.
+  TestcasemgmtDataUpsertLambda:
+    Type: String
+    Description: This is source testcasemgmt data updateConfig lambda name
+  VPCId:
+    Type: AWS::EC2::VPC::Id
+    Description: Enter the VPC ID
+  SubnetIds:
+    Type: List<AWS::EC2::Subnet::Id>
+    Description: Private subnets where Lambda A will run
+  SecurityGroupIds:
+    Type: List<AWS::EC2::SecurityGroup::Id>
+    Description: Security group for Lambda A
+  ApiVpcEndpoints:
+    Type: List<String>
+    Description: Enter the VPC Endpoint IDs
+  userdetailsLambdaArn:
+    Type: String
+    Description: ARN of the public Lambda (Lambda B) to invoke
+  ObervabilityAlarmEmail:
+    Type: String
+    Default: ""
+    Description: email id for Obervability Alarm
+
+Globals:
+  Function:
+    #--# Handler: index-getData.handler
+    Runtime: nodejs20.x
+    Timeout: 900
+    MemorySize: 3084 # MAX
+    Environment:
+      Variables:
+        Env: "PROD" #--# build prod libs
+        MODE: "PROD" #--# point to prod api
+        #--# DATA_TABLE: !Sub '${ProjectId}-DATA'
+        #--# EMAIL_FUNCTION: 'robotraderstack-GetTenantDataIdByEmail'
+        #--# USERNAME_FUNCTION: 'robotraderstack-GetTenantDataIdByUsername'
+        LOG_LEVEL: "DEBUG"
+        REGION: "us-east-1"
+        # USERPOOL_Id: 'us-east-1_HHHHHH'
+        # APP_CLIENT_ID: 'dc3ixxxxxxxxxxxxxg7kn'
+    AutoPublishAlias: live
+    DeploymentPreferences:
+      Enabled: true
+      #--# Type: Canary10Percent5Minutes
+      Type: AllAtOnce
+      Role: !Ref CodeDeployRole
+  Api:
+    Cors:
+      AllowMethods: "'DELETE,GET,HEAD,OPTIONS,PATCH,POST,PUT'"
+      #--# AllowMethods: "'GET,HEAD,OPTIONS'"
+      AllowHeaders: "'Content-Type,X-Amz-Date,X-Amz-Security-Token,Authorization,X-Api-Key,X-Requested-With,Accept,Access-Control-Allow-Methods,access-Control-Allow-Origin,Access-Control-Allow-Headers'"
+      AllowOrigin: "'*'"
+      # Auth:
+      # # Important! Add this line, or you'll have a bad time.
+      # # The CORS preflight OPTIONS request will fail.
+      # AddDefaultAuthorizerToCorsPreFlight: False
+
+Resources:
+##############################################
+########
+###### API GATEWAY
+ApiGatewayApi:
+  Type: AWS::Serverless::Api
+  DeletionPolicy: Retain
+  Properties:
+    StagName: vpcapi
+    Auth:
+      ApiKeyRequired: true
+    EndpointConfiguration:
+      Type: PRIVATE
+      VPCEndpointIds: !Ref ApiVpcEndpoints
+
+      # Cors: "'*'"
+      Cors:
+        # AllowMethods: "'GET,HEAD,OPTIONS,PATCH,POST,PUT'"
+        AllowMethods: "'GET,HEAD,OPTIONS'"
+        AllowHeaders: "'Content-Type,X-Amz-Date,X-Amz-Security-Token,Authorization,X-Api-Key,X-Requested-With,Accept,Access-Control-Allow-Methods,access-Control-Allow-Origin,Access-Control-Allow-Headers'"
+        AllowOrigin: "'*'"
+      Policy:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal: "*"
+            Action: "execute-api:Invoke"
+            Resource:
+              - ! Sub 'arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:*'
+            Condition:
+              StringEquals:
+                aws:SourceVpc: !Ref VPCId
+
+  userdetailsvpcApiGatewayKey:
+    Type: AWS::ApiGateway::ApiKey
+    #DeletionPolicy: Retain
+    Properties:
+      Enabled: true
+
+  userdetailsvpcApiGatewayUsagePlan:
+    Type: AWS::ApiGateway::UsagePlan
+    DependsOn: ApiGatewayApivpcapiStage
+    Properties:
+      UsagePlanName: "userdetailsvpcapiUsagePlan"
+      ApiStages:
+        - ApiId: !Ref ApiGatewayApi
+          Stage: vpcapi
+      Description: "userdetails Usage plan for API access"
+      Quota:
+        Limit: 999555
+        Period: MONTH
+      Throttle:
+        BurstLimit: 2000
+        RateLimit: 1000
+
+userdetailsvpcApiUsagePlanKey:
+  Type: AWS::ApiGateway::UsagePlanKey
+  Properties:
+    KeyId: !Ref userdetailsvpcApiGatewayKey
+    KeyType: "API_KEY"
+    UsagePlanId: !Ref userdetailsvpcApiGatewayUsagePlan
+
+######################################################
+#####
+##### LAMDA FUNCTIONS
+##
+getCounty:
+  Type: AWS::Serverless::Function
+  Properties:
+    FunctionName: !Sub "${ProjectId}-${Stage}-lamda-getCounty"
+    Handler: index-getCounty.handler
+    CodeUri: ./lamdas_nodejs/getCounty
+    VpcConfig:
+      SubnetIds: !Ref SubnetIds
+      SecurityGroupIds: !Ref SecurityGroupIds
+    Environment:
+      Variables:
+        STAGE: !Ref Stage
+        userdetailsDATA_GET_DATA_LAMBDA: !Ref userdetailsDataGetLambda
+        #ENTDATA_GET_DATA_API_KEY: !Ref EntDataApiKey
+
+        # note: run with 'RUST_BACKTRACE=1' environment variable to display a backtrace when using
+        # cryptography lib which is part of cloudfront signing
+        #--# RUST_BACKTRACE: 1
+        # note: Some details are omitted, run with 'RUST_BACKTRACE=full' for a verbose backtrace.
+        RUST_BACKTRACE: full
+        #
+        #DATA_TYPE: 'DATAID'
+        #DATA_INDEX: 'api_get_detaid_by_type_index'
+        #
+        # IMPORTANT NOTE! this is used for EXPIRE_TIME logic in the signed url set this value to the desired time you wish to allow the url to be valid
+        #--# TIMEDELTA_PERIOD: 'weeks'
+        #--# TIMEDELTA_PERIOD: 'days'
+        #--# TIMEDELTA_PERIOD: 'hours'
+        #--# TIMEDELTA_PERIOD: 'seconds'
+        #--# TIMEDELTA_PERIOD: 'minutes'
+        #--# TIMEDELTA_VALUE: '3'
+        #
+        TIMEDELTA_PERIOD: !Ref TIMEDELTAPERIOD
+        TIMEDELTA_VALUE: !Ref TIMEDELTAVALUE
+
+        #
+        #
+        # note: tested this simpler implementation, but it doesn't work
+        #IMPORTANT NOTE!  this is used for EXPIRE_TIME logic in the signed url set
+        #this value in seconds to the desired time you wish to allow the url to be valid
+        #
+        EXPIRES_IN: 90
+        #
+        #
+        #PrivateKeyName: !Ref PrivateKeyName
+        #CloudFrontTrustedKeyGroupPublicKeyId: !Ref CloudFrontDistributionKeyGroupPublicKeyParameter
+        #CloudFrontWWWDomainName: !Ref CloudFrontWWWDomainNameParameter
+        #
+        #
+    Role:
+      Fn::GetAtt:
+        - LambdaExectionRole
+        - Arn
+    Events:
+      EventgetCountyByAppAndUser:
+        Type: Api
+        Properties:
+          Path: /getCountyByAppAndUser
+          Method: any
+          RestApiId: !Ref ApiGatewayApi
+      EventgetCountyByApp:
+        Type: Api
+        Properties:
+          Path: /getCountyByApp
+          Method: any
+          RestApiId: !Ref ApiGatewayApi
+      EventgetCountyByConfigId:
+        Type: Api
+        Properties:
+          Path: /getCountyByConfigId
+          Method: any
+          RestApiId: !Ref ApiGatewayApi
+      EventgetCountyByConfigType:
+        Type: Api
+        Properties:
+          Path: /getCountyByConfigType
+          Method: any
+          RestApiId: !Ref ApiGatewayApi
+      EventgetCountyByConfigTypeAndConfigId:
+        Type: Api
+        Properties:
+          Path: /getCountyByConfigTypeAndConfigId
+          Method: any
+          RestApiId: !Ref ApiGatewayApi
+      EventgetCountyByDataTypeAndDataId:
+        Type: Api
+        Properties:
+          Path: /getCountyByDataTypeAndDataId
+          Method: any
+          RestApiId: !Ref ApiGatewayApi
+      EventgetCountyByDataTypeAndConfigId:
+        Type: Api
+        Properties:
+          Path: /getCountyByDataTypeAndConfigId
+          Method: any
+          RestApiId: !Ref ApiGatewayApi
+      EventgetCountyByDataIdAndDataType:
+        Type: Api
+        Properties:
+          Path: /getCountyByDataIdAndDataType
+          Method: any
+          RestApiId: !Ref ApiGatewayApi
+      EventgetCountyByDataTypeAndDataStatus:
+        Type: Api
+        Properties:
+          Path: /getCountyByDataTypeAndDataStatus
+          Method: any
+          RestApiId: !Ref ApiGatewayApi
+      EventgetCountyByDataTypeAndUpdateBy:
+        Type: Api
+        Properties:
+          Path: /getCountyByDataTypeAndUpdateBy
+          Method: any
+          RestApiId: !Ref ApiGatewayApi
+      EventgetCountyByUser:
+        Type: Api
+        Properties:
+          Path: /getCountyByUser
+          Method: any
+          RestApiId: !Ref ApiGatewayApi
+
+updateConfig:
+  Type: AWS::Serverless::Function
+  Properties:
+    FunctionName: !Sub "${ProjectId}-${Stage}-lambda-updateCounty"
+    Handler: index-updateCounty.handler
+    CodeUri: ./lamdas_nodejs/updateCounty
+    VpcConfig:
+      SubnetIds: !Ref SubnetIds
+      SecurityGroupIds: !Ref SecurityGroupIds
+    Environment:
+      Variables:
+        STAGE: !Ref Stage
+        userdetailsDATA_UPSERT_LAMBDA: !Ref userdetailsDataUpsertLambda
+        userdetailsDATA_GET_DATA_LAMBDA: !Ref userdetailsDataGetLambda
+        # note: run with 'RUST_BACKTRACE=1' environment variable to display a backtrace when using
+        #     cryptography lib which is part of cloudfront signing
+        #--# RUST_BACKTRACE: 1
+        # note: Some details are omitted, run with 'RUST_BACKTRACE=full' for a verbose backtrace.
+        RUST_BACKTRACE: full
+        #
+        #DATA_TYPE: 'DATAID'
+        #DATA_INDEX: 'api_get_dated_by_type_index'
+        #
+        # IMPORTANT NOTE! this is used for EXPIRE_TIME logic in the signed url set this value to the desired time you wish to allow the url to be valid
+        #--# TIMEDELTA_PERIOD: 'weeks'
+        #--# TIMEDELTA_PERIOD: 'days'
+        #--# TIMEDELTA_PERIOD: 'hours'
+        #--# TIMEDELTA_PERIOD: 'seconds'
+        #--# TIMEDELTA_PERIOD: 'minutes'
+        #--# TIMEDELTA_VALUE: '3'
+        #
+        TIMEDELTA_PERIOD: !Ref TIMEDELTAPERIOD
+        TIMEDELTA_VALUE: !Ref TIMEDELTAVALUE
+        #
+        #
+        #note: tested this simpler implementation, but it doesn't work
+        # IMPORTANT NOTE! this is used for EXPIRE_TIME logic in the signed url
+        #                 set this value in seconds to the desired time you wish to allow the url to be valid
+        EXPIRES_IN: 90
+        #
+        #
+        #PrivateKeyName: !Ref PrivateKeyName
+        #CloudFrontTrustedKeyGroupPublicKeyId: !Ref CloudFrontDistributionKeyGroupPublicKeyParameter
+        #CloudFrontWWWDomainName: !Ref CloudFrontWWWDomainNameParameter
+        #
+        #
+    Role:
+      Fn::GetAtt:
+        - LambdaExecutionRole
+        - Arn
+    Events:
+      updateConfigEvents:
+        Type: Api
+        Properties:
+          Path: ./updateCounty
+          Method: any
+          RestApiId: !Ref ApiGatewayApi
+
+      DeleteByConfigIdgEvent:
+        Type: Api
+        Properties:
+          Path: /deleteConfigById
+          Method: any
+          RestApiId: !Ref ApiGatewayApi
+
+userdetailsvpcTest:
+  Type: AWS::Serverless::Function
+  Properties:
+    FunctionName: !Sub "${ProjectId}-${Stage}-lambda-userdetailsvpcTest"
+    Handler: index-userdetailsvpcTest.handler
+    CodeUri: ./lambdas_nodejs/updateCounty
+    VpcConfig:
+      SubnetIds: !Ref SubnetIds
+      SecurityGroupIds: !Ref SecurityGroupIds
+    Environment:
+      Variables:
+        STAGE: !Ref Stage
+
+        # note: run with 'RUST_BACKTRACE=1' environment variable
+        # cryptography lib which is part of cloudfront signing
+        #--# RUST_BACKTRACE: 1
+        # note: Some details are ommitted, run with 'RUST_BACKTRACE=full' for a verbose backtrace.
+        RUST_BACKTRACE: full
+        #
+        #DATA_TYPE: 'DATAID'
+        #DATA_INDEX: 'api_get_dataid_by_type_index'
+        #
+        # IMPORTANT NOTE: this is used for EXPIRE_TIME logic in the signed url
+        #                  set this value to the desired time you wish to allow the url to be valid
+        #--# TIMEDELTA_PERIOD: 'weeks'
+        #--# TIMEDELTA_PERIOD: 'days'
+        #--# TIMEDELTA_PERIOD: 'hours'
+        #--# TIMEDELTA_PERIOD: 'seconds'
+        #--# TIMEDELTA_PERIOD: 'minutes'
+        #--# TIMEDELTA_VALUE: '3'
+        #
+        TIMEDELTA_PERIOD: !Ref TIMEDELTAPERIOD
+        TIMEDELTA_VALUE: !Ref TIMEDELTAVALUE
+        #
+        #
+        #
+        #note: tested this simipler implementation, but it doesn't work
+        #IMPORTANT NOTE: this is used for EXPIRE_TIME logic in the signed url
+        #              set this value in seconds to the desired time you wish to allow the url to be valid
+        EXPIRES_IN: 90
+        #
+        #
+        #PrivateKeyName: !Ref PrivateKeyName
+        #CloudFrontTrustedKeyGroupPublicKeyId: !Ref CloudFrontDistributionKeyGroupPublicKeyParameter
+        #CloudFrontWWWDomainName: !Ref cloudFrontWWWDomainNameParameter
+        #
+        #
+      Role:
+        Fn::GetAtt:
+          - LambdaExecutionRole
+          - Arn
+################################################################################
+#####
+##### SNS
+#SNS topic
+
+ObservabilityEmailAlarmSnsTopic:
+  Type: AWS::SNS::Topic
+  Properties:
+    Subscription:
+      - Endpoint: !Ref ObservabilityAlarmEmail
+        Protocol: email
+
+############################################################################
+######
+###### IAM ROLES
+LambdaExecutionRole:
+  Description: Creating service role in IAM for AWS Lambda
+  Type: AWS::IAM::Role
+  Properties:
+    RoleName: !Sub "${ProjectId}-Executed${Stage}-PUBLIC-API"
+    AssumeRolePolicyDocument:
+      Statement:
+        - Effect: Allow
+          Principal:
+            #--# service: [lambda.amazonaws.com]
+            Service: ["apigateway.amazonaws.com", "lambda.amazonaws.com"]
+          Action: sts:AssumeRole
+    Policies:
+      - PolicyName: LambdaVPCPermissions
+        PolicyDocument:
+          Version: "2012-10-17"
+          Statement:
+            - Effect: Allow
+              Action:
+                - logs:CreateLogGroup
+                - logs:CreateLogStream
+                - logs:PutLogEvents
+              Resource: "*"
+            - Effect: Allow
+              Action:
+                - ec2:CreateNetworkInterface
+                - ec2:DescribeNetworkInterfaces
+                - ec2:DeleteNetworkInterface
+              Resource: "*"
+      - PolicyName: AllowInvokeOtherLambda
+        PolicyDocument:
+          Version: "2012-10-17"
+          Statement:
+            - Effect: Allow
+              Action:
+                - lambda:InvokeFunction
+              Resource: "*"
+    Path: /
+    ManagedPolicyArns:
+      - !Sub "arn:${AWS::Partition}:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+      #--# ADD access to secrets mamager
+      - !Sub "arn:${AWS::Partition}:iam::aws:policy/SecretsManagerReadWrite"
+      - !Sub "arn:${AWS::Partition}:iam::aws:policy/AmazonS3FullAccess"
+
+      #
+      # TODO: add a dynamo read only role and a write role for SECURITY TODO
+      #
+      #--# ADD dynamoDB access:
+      #--# - !Sub 'arn:${AWS::Partition}:iam::aws:policy/AmazonDynamoDBFullAccess'
+      #--# ADD Cognito access:
+      #--# - !Sub 'arn:${AWS::Partition}:iam::aws:policy/AmazonCognitoReadOnly'
+      #--# ADD dynamodb access:
+      - !Sub "arn:${AWS::Partition}:iam::aws:policy/service-role/AWSLambdaRole"
+      #--# Add dynamodb access:
+      - !Sub "arn:${AWS::Partition}:iam::aws:policy/AmazonDynamoDBFullAccess"
+
+    PermissionsBoundary: !Sub "arn:${AWS::Partition}:iam::${AWS::AccountId}:policy/${ProjectId}_PermissionsBoundary"
+#############################################################################
+########
+##### SSM Param
+ApiGatewayApiParamameter:
+  Type: AWS::SSM::Parameter
+  Properties:
+    Name: !Sub ${Namespace}/${Environment}/api-gateway/ApiGatewayApiURL
+    Description: Outputs the APiGatewayApi URL
+    #--# Value:  !Sub "${ApiGatewayApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/"
+    Value: !Sub "${ApiGatewayApi}.execute-api.${AWS::Region}.amazonaws.com"
+    Type: String
+
+# observability email alarm sns topic for send email alarm
+ObervabilityEmailAlarmSnsTopicParameter:
+  Type: AWS::SSM::Parameter
+  Properties:
+    Name: !Sub ${Namespace}/${Environment}/SNS/ObservabilityEmailAlarmSnsTopic
+    Description: Outputs the ObservabilityemailAlarmSnstopic SNS Queue ARN
+    Value: !Ref ObservabilityEmailAlarmSnsTopic
+    Type: String
+
+# SSM Parameter for getCounty Lambda Function ARN
+getCountyParameter:
+  Type: AWS::SSM::Parameter
+  Properties:
+    Name: !Sub ${Namespace}/${Environment}/lambdas/getCounty
+    Description: Outputs the getCounty Lambda
+    Value: !Ref getCounty
+    Type: String
+
+# SSM Parameter for updateCounty Lambda function ARN
+updateCountyParameter:
+  Type: AWS::SSM::Parameter
+  Properties:
+    Name: !Sub /${Namespace}/${Environment}/lambdas/updateCounty
+    Description: Outputs the updateCounty Lambda
+    Value: !Ref updateCounty
+    Type: String
+
+Outputs:
+  ApiGatewayApiEndpoint:
+    Description: "API ApiGatewayApi endpoint"
+    Value: !Sub "https://${ApiGatewayApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/"
+################################################
+######
+###### IAM ROLES
+# LambdaExecutionrole:
+# Description: Creating service role in IAM role for AWS Lambda
+# Type: AWS::IAM::Role
+# Properties:
+#   RoleName: !Sub 'CodeStar-${ProjectId}-Execution${Stage}-BE'
+#   AssumeRolePolicyDocument:
+#     Statement:
+#    - Effect: Allow
+#      Principal:
+#        Service: ["lambda.amazonaws.com","ssm.amazonaws.com"]
+#      Action: sts:AssumeRole
+#   Path: /
+#   Policies:
+#    - PolicyName: hackCF
+#      PolicyDocument:
+#      Version: "2022-10-17"
+#       Statement:
+#         - Effect: Allow
+#           # Action: '*'
+#           Action: 'iam:PassRole'
+#           Resource: '*'
+#   ManagedPolicyArna:
+#   - !Sub 'arn:${AWS::Partition}:iam::aws:policy/service-role/AWSLambdaBasicExectionRole'
+#-# full lambda access
+#--# !Sub 'arn:${AWS::Partition}:iam::aws:policy/AWSLambdaFullAccess'
+#--#ADD Full dynamodb access:
+#--# - !Sub 'arn:${AWS::Partition}:iam::aws:policy/AmazonDynamoDBFullAccess'
+#--# states:ListExecutions:
+#--# - !Sub 'arn:${AWS::Partition}:iam::aws:policy/AWSStepFunctionsFullAccess'
+#--# ADD FULL SSM access:
+# -!Sub 'arn:${AWS::Partition}:iam::aws:policy/AmazonSSMFullAccess'
+#--# SSM Activation Code roles:
+#- !Sub 'arn:${AWS::Partition}:iam::aws:policy/AmazonSSMManagedInstanceCore'
+#- !Sub 'arn:${AWS::Partition}:iam::aws:policy/CloudWatchAgentServerPolicy'
+##--# PermissionsBoundary: !Sub 'arn:${AWS::Partition}:iam::${AWS::AccountId}:policy/CodeStar_${ProjectId}_PermissionsBoundary'
+##--## TODO: fine tune permission boundary

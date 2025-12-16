@@ -1,0 +1,12 @@
+{
+  "Parameters": {
+    "ProjectId": "userdetails",
+    "Environment": "qa",
+    "ReleaseS3Bcket": "userdetails-_REPLACE_ACCOUNT_NUMBER_-releases",
+    "GithubOrg": "",
+    "GithubRepo": "userdetailsvpc"
+  },
+  "Tags": {
+    "awscodestar:projectArn": "arn:aws:us-east1:_REPLACE_ACCOUNT_NUMBER_:project/userdetails"
+  }
+}

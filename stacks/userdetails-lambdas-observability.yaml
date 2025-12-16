@@ -1,0 +1,163 @@
+AWSTemplateFormatVersion: 2010-09-09
+Transform:
+  - AWS::Serverless-2016-10-31
+# - AWS::CodeStar
+# throws: AWS CodeStar encountered an error while handling your request: Rate exceeded
+
+Parameters:
+  Environment:
+    Type: String
+    Description: Environment Name for Deployment
+  Namespace:
+    Type: String
+    Description: Namespace information for Deployment
+  ProjectId:
+    Type: String
+    Description: CodeStar projectId used to associate new resources to team members
+  Stage:
+    Type: String
+    Description: The name for a project pipeline stage, such as Staging or Prod, for which resources are provisioned and deployed.
+    Default: ''
+  LambdaFunctionSSMParameter:
+    Type: 'AWS::SSM::Parameter::Value<String'
+    Description: SSM Parameter name to store ARN of Lambda function
+  ErrorThreshold:
+    Type: String
+    Description: Value for lambda error threshold
+  BillingThreshold:
+    Type: String
+    Description: Value for lambda billing threshold
+  InvocationThreshold:
+    Type: String
+    Description: Value for lambda invocation threshold
+  Durationthreshold:
+    Type: String
+    Description: Value for lambda duration threshold
+  ConcurrentexecutionsThreshold:
+    Type: String
+    Description: Value for lambda concurrent executions threshold
+  ObsvEmailAlarmSNSSSMParameter:
+    Type: 'AWS::SSM::Parameter::Value<String>'
+    Description: SSM Parameter storing the ARN of observability SNS'   
+  ResourceName:
+    Type: String
+    Description: Name of the resource being monitored
+
+Resources:
+  LambdaErrorsAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub "${ProjectId}-${StageEnvironment}-${ResourceName}-ErrorsAlarm"
+      AlarmDescription: "Alarm for Lambda Errors"
+      Namespace: "AWS/Lambda"
+      MetricName: "Errors"
+      Dimensions:
+        - Name: FunctionName
+          Value: !Ref LambdaFunctionSSMParameter
+      Statistic: Sum
+      Period: 60
+      EvaluationPeriods: 1
+      Threshold: !Ref ErrorThreshold
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+      AlarmActions:
+        - !Ref ObsvEmailAlarmSNSSSMParameter      
+
+BillingAlram:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub "${ProjectId}-${Environment}-${ResourceName}-BillingAlarm"
+      AlarmDescription: "Alarm for billing exceeding threshold"
+      ComparisonOperator: GreaterThanThreshold
+      EvaluationPeriods: 1
+      Metrics:
+        - Id: m1
+          MetricStat:
+            Metric:
+              MetricName: "Invocations"
+              Namespace: "AWS/Lambda"
+              Dimensions:
+                - Name: "FunctionName"
+                  Value: !Ref LambdaFunctionSSMParameter
+            Period: 86400  # 24 hours
+            Stat: "Maximum"
+    Threshold: !Ref BillingThreshold
+      TreatMissingData: notBreaching
+      AlarmActions:
+        - !Ref ObsvEmailAlarmSNSSSMParameter
+
+LambdaDurationAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub "${ProjectId}-${Environment}-${ResourceName}-DurationAlarm"
+      AlarmDescription: "Alarm for Lambda function duration exceeding threshold"
+      ComparisonOperator: GreaterThanThreshold
+      EvaluationPeriods: 1
+      Metrics:
+        - Id: m1
+          MetricStat:
+            Metric:
+              MetricName: "Duration"
+              Namespace: "AWS/Lambda"
+              Dimensions:
+                - Name: "FunctionName"
+                  Value: !Ref LambdaFunctionSSMParameter
+            Period: 300 #24 hours
+            Stat: "Average"
+      Thereshold: !Ref Durationthreshold
+      TreatMissingData: notBreaching
+      AlarmActions:
+        - !Ref ObsvEmailAlarmSNSSSMParameter
+
+  LambdaInvocationsAlarm: 
+    Type: AWS::CloudWatch::Alarm      
+    Properties:
+      AlarmName: !Sub "${ProjectId}-${Environment}-${ResourceName}-InvocationsAlarm"
+      AlarmDescription: "Alarm triggered if Lambda function invocations exceeds the  threshold"
+      ComparisonOperator: GreaterThanThreshold
+      EvaluationPeriods: 1
+      Metrics:
+        - Id: "m1"
+          MetricStat:
+            Metric:
+              MetricName: "Invocations"
+              Namespace: "AWS/Lambda"
+              Dimensions:
+                - Name: "FunctionName"
+                  Value: !Ref LambdaFunctionSSMParameter
+            Period: 300 # 5 minutes
+            Stat: "Sum"
+      Threshold: !Ref InvocationThreshold
+      TreatMissingData: notBreaching   
+      AlarmActions:
+        - !Ref ObsvEmailAlarmSNSSSMParameter
+
+concurrentExecutionsAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub "${ProjectId}-${Environment}-${ResourceName}-ConcurrentExecutionsAlarm"
+      AlarmDescription: "Alarm for Lambda concurrent executions exceeding threshold"
+      ComparisonOperator: GreaterThanThreshold
+      EvaluationPeriods: 1
+      Metrics:
+        - Id: "m1"
+          MetricStat:
+            Metric:
+              MetricName: "ConcurrentExecutions"
+              Namespace: "AWS/Lambda"
+              Dimensions:
+                - Name: "FunctionName"
+                  Value: !Ref LambdaFunctionSSMParameter
+            Period: 60 # 1 minute
+            Stat: "Maximum"
+      Threshold: !Ref ConcurrentExecutionsThreshold
+      TreatMissingData: notBreaching
+      AlarmActions:
+        - !Ref ObsvEmailAlarmSNSSSMParameter
+
+
+
+Outputs:
+  ObservabilityStackOutputs:
+    Description: "Outputs from  observability stack"
+    Value: "This stack contains alarms for Lambda errors"

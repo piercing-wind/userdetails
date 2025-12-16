@@ -1,0 +1,32 @@
+{
+  "name": "_REPLACE_CODESTAR_PROJECT_NAME_",
+  "id": "_REPLACE_CODESTAR_PROJECT_NAME_",
+  "description": "project created with CLI automation",
+  "sourceCode": [
+    {
+      "source": {
+        "s3": {
+          "bucketName": "_REPLACE_RELEASES_BUCKET_",
+          "bucketKey": "_REPLACE_CODESTAR_PROJECT_NAME_-src.zip"
+        }
+      },
+      "destination": {
+        "codeCommit": {
+          "name": "_REPLACE_CODESTAR_PROJECT_NAME_"
+        }
+      }
+    }
+  ],
+  "toolchain": {
+    "source": {
+      "s3": {
+        "bucketName": "_REPLACE_RELEASES_BUCKET_",
+        "bucketKey": "_REPLACE_CODESTAR_PROJECT_NAME_-toolchain.yml"
+      }
+    },
+    "roleArn": "arn:aws:iam::161174596715:role/service-role/aws-codestart-service-role",
+    "stackParameters": {
+      "ProjectId": "_REPLACE_CODESTAR_PROJECT_NAME_"
+    }
+  }
+}

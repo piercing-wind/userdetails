@@ -1,0 +1,22 @@
+{
+  "Parameters": {
+    "Namespace": "userdetails",
+    "Environment": "dev",
+    "ProjectId": "userdetails",
+    "Stage": "dev",
+    "TIMEDELTAPERIOD": "hours",
+    "TIMEDELTAAVALUE": "21",
+    "CodeDeployRole": "arn:$PARTITION$:iam::$ACCOUNT_ID$:role/userdetails-CloudFormation",
+    "userdetailsDataGetLambda": "entdatavpc-dev-lambda-getdata",
+    "userdetailsDataUpdateLambda": "entdatavpc-dev-lambda-upsertdata",
+    "VPCId": "vpc-0a4196100da7cbb98",
+    "SubnetIds": "subnet-1cccca4108ee44134,subnet-13276df54e603c0ef",
+    "SecurityGroupIds": "sg-098c78b9fc2f49adf",
+    "ApiVpcEndpoints": "vpce-03136f71dcd0b1bfcf",
+    "userdetailsLambdaArn": "arn:aws:lambda:us-east-1:047719639450:function:entconfig-dev-lambda-updateConfig",
+    "ObervabilityAlarmEmail": ""
+  },
+  "Tags": {
+    
+  }
+}

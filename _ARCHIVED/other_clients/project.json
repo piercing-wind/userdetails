@@ -1,0 +1,10 @@
+{
+  "Parameters": {
+    "ProjectId": "ecmcdn",
+    "Environment": "dev",
+    "ReleaseS3Bcket": "aws-codestar-us-east-1-161174596715-releases"
+  },
+  "Tags": {
+    "awscodestar:projectArn": "arn:aws:codestar:us-east-1:161174596715:project/ecmcdn"
+  }
+}

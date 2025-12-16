@@ -1,0 +1,32 @@
+{
+  "name": "userdetails",
+  "id": "userdetails",
+  "description": "project created with CLI automation",
+  "sourceCode": [
+    {
+      "source": {
+        "s3": {
+          "bucketName": "userdetails-c-userdetails-dev-releases",
+          "bucketKey": "userdetails-src.zip"
+        }
+      },
+      "destination": {
+        "codeCommit": {
+          "name": "userdetails"
+        }
+      }
+    }
+  ],
+  "toolchain": {
+    "source": {
+      "s3": {
+        "bucketName": "userdetails-c-userdetails-dev-releases",
+        "bucketKey": "userdetails-toolchain.yml"
+      }
+    },
+    "roleArn": "arn:aws:iam::c-userdetails-dev:role/service-role/aws-codestart-service-role",
+    "stackParameters": {
+      "ProjectId": "userdetails"
+    }
+  }
+}

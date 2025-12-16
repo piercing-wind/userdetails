@@ -1,0 +1,107 @@
+version: 0.2
+
+env:
+  variables:
+    AWS_DEFAULT_REGION: "us-east-1"
+    AWS_REGION: "us-east-1"
+
+phases:
+  install:
+    runtime-versions:
+      nodejs: 22
+    commands:
+      - pip install --upgrade pip
+      # Upgrade AWS CLI to the latest version
+      - pip install --upgrade awscli
+      # - pip install cfn-lint
+
+  pre_build:
+    commands:
+      - echo Build started on `date`
+      - echo Pulling the pip requirements
+      #- pip install -r requirements.txt -t stacks/lambdas/.
+      #- pip install -r requirements.txt -t stacks/backend/lambdas/.
+      #- pip install -r requirements.txt -t stacks/middlware_api/lambdas/.
+      #- pip install -r requirements.txt -t stacks/middleware_api/lambdas_public/.
+
+      # Install getCountyPreference nodejs dependencies
+      - cd stacks/lambdas_nodejs/getCounty
+      - npm install
+      - cd -
+
+      # Instal updatecountyPreference nodejs dependencies
+      - cd stacks/lambdas_nodejs/updateCounty
+      - npm install
+      - cd -
+
+  build:
+    commands:
+      - echo Entered the build phase...
+      - echo Build started on 'date'
+      - echo "S3 bucket is $S3_BUCKET"
+      - echo "AWS_DEFAULT_REGION is $AWS_DEFAULT_REGION"
+      - echo "AWS_REGION" is $AWS_DEFAULT_REGION"
+      - echo "DEBUG PARTITION is $PARTITION"
+
+
+  post_build:
+    commands:
+      - echo "Entering POST_BUILD phase"
+      - pwd
+      - ls -ltr
+      # AWS WP REf Arch - decoupled
+      ## VPC
+      #- aws cloudformation package --template stacks/userdetails-newvpc.yaml --s3-bucket $S3_BUCKET --output-template-file userdetails-newvpc-export.yml
+      #-echo "CAT DEBUG"
+      #- cat userdetails-newvpc-export.yml
+      #- echo "CFN-LIMIT DEBUG"
+      #-cfn-lint userdetails-newvpc.yaml
+      #-cfn-lint userdetails-newvpc-export.yml
+      #
+      #-echo "AWS CLI VERSION"
+      #-aws --version
+      #
+      #
+      #S3
+      # - aws cloudformation package --template stacks/userdetails-s3.yaml --s3-bucket $S3_BUCKET --output-template-file userdetails-s3-export.yml
+
+    ## Lambdas
+    - aws cloudformation package --template stacks/userdetails-lambdas.yaml --s3-bucket $S3_BUCKET --output-template-file userdetails-lambdas-observability-export.yml
+    #
+    ## Observability Lambdas
+    - aws cloudformation package --template stacks/userdetails-lambdas-observability.yaml --s3-bucket $S3_BUCKET --output-template-file userdetails-lambdas-observability-export.yml
+
+
+    #
+    - sed -i.bak 's/\$PARTITION\$/'${PARTITION}'/g;s/\$AWS_REGION\$/'${AWS_REGION}'/g;s/\$ACCOUNT_ID\$/'${\$ACCOUNT_ID}'/g;s/\$PROJECT_ID\$/'${PROJECT_ID}'/g' params/dev/userdetails-parameters-lambdas.json
+    - sed -i.bak 's/\$PARTITION\$/'${PARTITION}'/g;s/\$AWS_REGION\$/'${AWS_REGION}'/g;s/\$ACCOUNT_ID\$/'${\$ACCOUNT_ID}'/g;s/\$PROJECT_ID\$/'${PROJECT_ID}'/g' params/qa/userdetails-parameters-lambdas.json
+    - sed -i.bak 's/\$PARTITION\$/'${PARTITION}'/g;s/\$AWS_REGION\$/'${AWS_REGION}'/g;s/\$ACCOUNT_ID\$/'${\$ACCOUNT_ID}'/g;s/\$PROJECT_ID\$/'${PROJECT_ID}'/g' params/prod/userdetails-parameters-lambdas.json
+
+    - sed -i.bak 's/\$PARTITION\$/'${PARTITION}'/g;s/\$AWS_REGION\$/'${AWS_REGION}'/g;s/\$ACCOUNT_ID\$/'${\$ACCOUNT_ID}'/g;s/\$PROJECT_ID\$/'${PROJECT_ID}'/g' params/dev/userdetails-parameters-lambdas-observability-lambda-1.json
+    - sed -i.bak 's/\$PARTITION\$/'${PARTITION}'/g;s/\$AWS_REGION\$/'${AWS_REGION}'/g;s/\$ACCOUNT_ID\$/'${\$ACCOUNT_ID}'/g;s/\$PROJECT_ID\$/'${PROJECT_ID}'/g' params/qa/userdetails-parameters-lambdas-observability-lambda-2.json
+
+
+    - sed -i.bak 's/\$PARTITION\$/'${PARTITION}'/g;s/\$AWS_REGION\$/'${AWS_REGION}'/g;s/\$ACCOUNT_ID\$/'${\$ACCOUNT_ID}'/g;s/\$PROJECT_ID\$/'${PROJECT_ID}'/g' params/prod/userdetails-parameters-lambdas-observability-lambda-1.json
+    - sed -i.bak 's/\$PARTITION\$/'${PARTITION}'/g;s/\$AWS_REGION\$/'${AWS_REGION}'/g;s/\$ACCOUNT_ID\$/'${\$ACCOUNT_ID}'/g;s/\$PROJECT_ID\$/'${PROJECT_ID}'/g' params/prod/userdetails-parameters-lambdas-observability-lambda-2.json
+
+artifacts:
+  # discard-paths: yes
+  files:
+    ## Lambdas
+    - userdetails-lambdas-export.yml
+    - params/dev/userdetails-parameters-lambdas.json
+    - params/qa/userdetails-parameters-lambdas.json
+    - params/prod/userdetails-parameters-lambdas.json
+    ### Lambdas Observability
+    - userdetails0lambdas-observability-export.yml
+    - params/dev/userdetails-parameters-lambdas-observability-lambda-1.json
+    - params/dev/userdetails-parameters-lambdas-observability-lambda-2.json
+    - params/dev/userdetails-parameters-lambdas-observability-lambda-3.json
+    - params/dev/userdetails-parameters-lambdas-observability-lambda-4.json
+    - params/dev/userdetails-parameters-lambdas-observability-API.json
+
+    - params/qa/userdetails-parameters-lambdas-observability-lambda-1.json
+    - params/qa/userdetails-parameters-lambdas-observability-lambda-2.json
+  
+    - params/prod/userdetails-parameters-lambdas-observability-lambda-1.json
+    - params/prod/userdetails-parameters-lambdas-observability-lambda-2.json

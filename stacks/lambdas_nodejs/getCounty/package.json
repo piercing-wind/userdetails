@@ -1,0 +1,14 @@
+{
+  "name": "getcounty-lambda",
+  "version": "1.0.0",
+  "description": "Get County Lambda Function",
+  "main": "index-getCounty.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "aws-sdk": "^2.1691.0"
+  },
+  "author": "",
+  "license": "ISC"
+}

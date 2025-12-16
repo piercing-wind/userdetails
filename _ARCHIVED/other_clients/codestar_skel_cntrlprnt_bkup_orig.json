@@ -1,0 +1,32 @@
+{
+  "name": "cntrlprnt",
+  "id": "cntrlprnt",
+  "description": "project created with CLI automation",
+  "sourceCode": [
+    {
+      "source": {
+        "s3": {
+          "bucketName": "aws-codestar-us-east-1-912865507053-releases",
+          "bucketKey": "cntrlprnt-src.zip"
+        }
+      },
+      "destination": {
+        "codeCommit": {
+          "name": "cntrlprnt"
+        }
+      }
+    }
+  ],
+  "toolchain": {
+    "source": {
+      "s3": {
+        "bucketName": "aws-codestar-us-east-1-912865507053-releases",
+        "bucketKey": "cntrlprnt-toolchain.yml"
+      }
+    },
+    "roleArn": "arn:aws:iam::912865507053:role/service-role/aws-codestart-service-role",
+    "stackParameters": {
+      "ProjectId": "cntrlcomms"
+    }
+  }
+}

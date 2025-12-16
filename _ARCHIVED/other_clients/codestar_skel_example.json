@@ -1,0 +1,32 @@
+{
+  "name": "MyProject",
+  "id": "myproject",
+  "description": "Sample project created with the CLI",
+  "sourceCode": [
+    {
+      "source": {
+        "s3": {
+          "bucketName": "MyBucket",
+          "bucketKey": "src.zip"
+        }
+      },
+      "destination": {
+        "codeCommit": {
+          "name": "myproject"
+        }
+      }
+    }
+  ],
+  "toolchain": {
+    "source": {
+      "s3": {
+        "bucketName": "MyBucket",
+        "bucketKey": "toolchain.yml"
+      }
+    },
+    "roleArn": "role_ARN",
+    "stackParameters": {
+      "ProjectId": "myprojects"
+    }
+  }
+}
