@@ -2,7 +2,7 @@
   "Parameters": {
     "Environment": "dev",
     "ProjectId": "userdetails",
-    "DBSecrets": "",
+    "DBSecrets": "arn:aws:secretsmanager:us-east-1:123456789012:secret:userdetails-db-credentials-ABC123",
     "VpcId": "",
     "SubnetIds": "",
     "SecurityGroupId": ""
