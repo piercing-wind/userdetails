@@ -70,17 +70,6 @@ Resources:
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
         - !If [HasVpc, 'arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole', !Ref 'AWS::NoValue']
       Policies:
-        - !If
-          - HasDBSecrets
-          - PolicyName: SecretsManagerAccess
-            PolicyDocument:
-              Version: '2012-10-17'
-              Statement:
-                - Effect: Allow
-                  Action:
-                    - secretsmanager:GetSecretValue
-                  Resource: !Ref DBSecrets
-          - !Ref AWS::NoValue
         - PolicyName: S3Access
           PolicyDocument:
             Version: '2012-10-17'
@@ -92,6 +81,21 @@ Resources:
                   - HasS3Bucket
                   - !Sub 'arn:aws:s3:::${S3bucket}/*'
                   - !Sub '${S3ConfigBucket.Arn}/*'
+
+  SecretsManagerPolicy:
+    Type: AWS::IAM::Policy
+    Condition: HasDBSecrets
+    Properties:
+      PolicyName: SecretsManagerAccess
+      Roles:
+        - !Ref LambdaExecutionRole
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Action:
+              - secretsmanager:GetSecretValue
+            Resource: !Ref DBSecrets
 
   LambdaSecurityGroup:
     Type: AWS::EC2::SecurityGroup
