@@ -85,8 +85,8 @@ jobs:
         # Copy artifacts matching buildspec.yml artifacts section
         cp template-export.yml artifacts/
         cp params/dev/userdetails-parameters-lambdas.json artifacts/
-        cp params/qa/userdetails-parameters-lambdas.json artifacts/
-        cp params/prod/userdetails-parameters-lambdas.json artifacts/
+        # cp params/qa/userdetails-parameters-lambdas.json artifacts/
+        # cp params/prod/userdetails-parameters-lambdas.json artifacts/
         
         # Create a zip file with all build artifacts
         cd artifacts
