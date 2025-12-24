@@ -2,8 +2,7 @@
   "Parameters": {
     "Environment": "dev",
     "ProjectId": "userdetails",
-    "S3bucket": "",
-    "DBSecrets": "arn:aws:secretsmanager:us-east-1:123456789012:secret:userdetails/dev/dbcredentials-abc123",
+    "DBSecrets": "",
     "VpcId": "",
     "SubnetIds": "",
     "SecurityGroupId": ""

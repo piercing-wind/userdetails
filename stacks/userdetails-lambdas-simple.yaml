@@ -10,10 +10,6 @@ Parameters:
     Type: String
     Description: Project identifier
     Default: userdetails
-  S3bucket:
-    Type: String
-    Description: Existing S3 bucket name for Lambda code
-    Default: ''
   DBSecrets:
     Type: String
     Description: Database master password
@@ -37,8 +33,6 @@ Conditions:
   HasVpcAndSg: !And
     - !Condition HasVpc
     - !Condition HasSg
-  HasS3Bucket: !Not [!Equals [!Ref S3bucket, '']]
-  CreateS3Bucket: !Equals [!Ref S3bucket, '']
   CreateLambdaSg: !And
     - !Condition HasVpc
     - !Not [!Condition HasSg]
@@ -46,16 +40,6 @@ Conditions:
 
 Resources:
   
-  S3ConfigBucket:
-    Type: AWS::S3::Bucket
-    Condition: CreateS3Bucket
-    DeletionPolicy: Retain
-    UpdateReplacePolicy: Retain
-    Properties:
-      BucketName: !Sub '${ProjectId}-${Environment}-${AWS::AccountId}-bucket'
-      VersioningConfiguration:
-        Status: Enabled
-
   LambdaExecutionRole:
     Type: AWS::IAM::Role
     Properties:
@@ -69,18 +53,6 @@ Resources:
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
         - !If [HasVpc, 'arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole', !Ref 'AWS::NoValue']
-      Policies:
-        - PolicyName: S3Access
-          PolicyDocument:
-            Version: '2012-10-17'
-            Statement:
-              - Effect: Allow
-                Action:
-                  - s3:GetObject
-                Resource: !If
-                  - HasS3Bucket
-                  - !Sub 'arn:aws:s3:::${S3bucket}/*'
-                  - !Sub '${S3ConfigBucket.Arn}/*'
 
   SecretsManagerPolicy:
     Type: AWS::IAM::Policy
@@ -214,12 +186,3 @@ Outputs:
     Value: !Ref DBSecrets
     Export:
       Name: !Sub '${ProjectId}-${Environment}-db-secret-arn'
-  
-  S3BucketName:
-    Description: S3 Bucket for Lambda code
-    Value: !If
-      - HasS3Bucket
-      - !Ref S3bucket
-      - !Ref S3ConfigBucket
-    Export:
-      Name: !Sub '${ProjectId}-${Environment}-bucket'
