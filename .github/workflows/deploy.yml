@@ -42,43 +42,50 @@ jobs:
 
     - name: Package Lambda functions and CloudFormation templates
       run: |
-        # Set environment variables FIRST (matching buildspec.yml environment)
+        # Set environment variables
         export PARTITION="aws"
         export ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
         export S3_BUCKET="${PROJECT_ID}-${AWS_REGION}-${ACCOUNT_ID}-pipeline-artifacts"
+        
+        # Save to GITHUB_ENV for use in subsequent steps
+        echo "ACCOUNT_ID=$ACCOUNT_ID" >> $GITHUB_ENV
+        echo "S3_BUCKET=$S3_BUCKET" >> $GITHUB_ENV
         
         echo "S3 bucket is $S3_BUCKET"
         echo "AWS_DEFAULT_REGION is $AWS_REGION"
         echo "AWS_REGION is $AWS_REGION"
         echo "ACCOUNT_ID is $ACCOUNT_ID"
 
-        echo "List files before build"
-        ls -a
-
-
         echo "Install Lambda dependencies (matching buildspec.yml)"
-        
+
         cd stacks/lambdas_nodejs/getCounty
         npm install
         cd -
         
-        echo "List files after dependency installation"
-        ls -a
+        cd stacks/lambdas_nodejs/updateCounty
+        npm install
+        cd -
 
         echo "Entering POST_BUILD phase"
         pwd
         ls -ltr
         
         # Package CloudFormation template - uploads Lambda code to S3 and modifies template
-        aws cloudformation package --template-file stacks/userdetails-lambdas.yaml --s3-bucket $S3_BUCKET --output-template-file template-export.yml
+        echo "Packaging CloudFormation template..."
+        aws cloudformation package \
+          --template-file stacks/userdetails-lambdas.yaml \
+          --s3-bucket $S3_BUCKET \
+          --output-template-file template-export.yml \
+          --debug
         
-        ls -la
+        echo "Package command completed"
+        ls -la template-export.yml
 
     - name: Upload artifacts to S3
       run: |
-        # Get the S3 bucket name (matching buildspec.yml artifacts)
-        export ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
-        export S3_BUCKET="${PROJECT_ID}-${AWS_REGION}-${ACCOUNT_ID}-pipeline-artifacts"
+        # Use variables from previous step (saved to GITHUB_ENV)
+        echo "Using S3 bucket: $S3_BUCKET"
+        echo "Using Account ID: $ACCOUNT_ID"
         
         # Create artifacts directory structure matching buildspec.yml
         mkdir -p artifacts
