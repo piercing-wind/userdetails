@@ -52,17 +52,17 @@ jobs:
         echo "AWS_REGION is $AWS_REGION"
         echo "ACCOUNT_ID is $ACCOUNT_ID"
 
-        # List files before build
+        echo "List files before build"
         ls -a
 
 
+        echo "Install Lambda dependencies (matching buildspec.yml)"
         
-        # Install Lambda dependencies (matching buildspec.yml)
         cd stacks/lambdas_nodejs/getCounty
         npm install
         cd -
         
-        # List files after dependency installation
+        echo "List files after dependency installation"
         ls -a
 
         echo "Entering POST_BUILD phase"
