@@ -182,6 +182,7 @@ Outputs:
       Name: !Sub '${ProjectId}-${Environment}-lambda'
   
   DatabaseSecretArn:
+    Condition: HasDBSecrets
     Description: Secrets Manager secret ARN for database credentials
     Value: !Ref DBSecrets
     Export:
