@@ -187,7 +187,8 @@ Resources:
                   RoleArn: !GetAtt "CloudFormationTrustRole.Arn"
                   StackName: !Sub "${ProjectId}-lambda"
                   # These are the parameters that will be set in your AWS CloudFormation stack
-                  ParameterOverrides: !Sub '{"ProjectId":"${ProjectId}"}'
+                  ParameterOverrides: !Sub '{"ProjectId":"${ProjectId}","Environment":"${Environment}"}'
+                  TemplateConfiguration: !Sub "${ProjectId}-BuildArtifact::params/${Environment}/userdetails-parameters-lambdas.json"
                   # GitHub Actions will build and upload the CloudFormation template
                   TemplatePath: !Sub "${ProjectId}-BuildArtifact::template-export.yml"
                 Name: GenerateChangeSet
