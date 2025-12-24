@@ -72,7 +72,7 @@ Resources:
                   - codepipeline:StartPipelineExecution
                   - codepipeline:GetPipelineExecution
                   - codepipeline:GetPipelineState
-                Resource: !Sub "arn:aws:codepipeline:${AWS::Region}:${AWS::AccountId}:pipeline/${ProjectId}-Pipeline"
+                Resource: !Sub "arn:aws:codepipeline:${AWS::Region}:${AWS::AccountId}:${ProjectId}-Pipeline"
               - Effect: Allow
                 Action:
                   - sts:GetCallerIdentity
