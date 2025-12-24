@@ -89,32 +89,13 @@ fi
 
 echo ""
 echo "=========================================="
-echo "STEP 4: Deleting OIDC Provider..."
-echo "=========================================="
-
-OIDC_ARN=$(aws iam list-open-id-connect-providers --profile $PROFILE --output text 2>/dev/null | grep "token.actions.githubusercontent.com" | awk '{print $2}' || true)
-
-if [ -n "$OIDC_ARN" ]; then
-    echo "Found OIDC provider: $OIDC_ARN"
-    aws iam delete-open-id-connect-provider \
-        --open-id-connect-provider-arn "$OIDC_ARN" \
-        --profile $PROFILE
-    
-    if [ $? -eq 0 ]; then
-        echo "✓ OIDC provider deleted successfully"
-    else
-        echo "⚠ OIDC provider deletion failed"
-    fi
-else
-    echo "⚠ OIDC provider not found or already deleted"
-fi
-
-echo ""
-echo "=========================================="
 echo "Cleanup complete!"
 echo "=========================================="
 echo ""
+echo "Note: OIDC provider is preserved for GitHub Actions authentication"
+echo ""
 
+echo "done!"
 ##
 ## END
 ##
