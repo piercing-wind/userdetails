@@ -20,6 +20,74 @@ Parameters:
     Type: String
 
 Resources:
+  # Each AWS Codebuild project requires a role for AWS CodeBuild to operate on your code.
+  CodeBuildRole:
+    Description: Creating service role in IAM for AWS CodeBuild
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Action: sts:AssumeRole
+            Effect: Allow
+            Principal:
+              Service: codebuild.amazonaws.com
+      Path: /
+      RoleName: !Sub "${ProjectId}-CodeBuild-Role"
+    Type: AWS::IAM::Role
+
+  # This minimal set of permissions lets AWS CodeBuild retrieve your encrypted code artifact from Amazon S3 and store its logs in Amazon cloudWatch Logs
+  CodeBuildpolicy:
+    Description: Setting IAM policy for AWS CodeBuild role
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Action:
+              - logs:*
+              - s3:*
+              - lambda:* #--# used for automated testing lambda:invoke
+              - secretsmanager:*
+              - codeconnections:UseConnection
+              - codeconnections:GetConnection
+            Effect: Allow
+            Resource: "*"
+      PolicyName: CodeBuildPolicy
+      Roles:
+        - !Ref "CodeBuildRole"
+
+  CodeBuildProject:
+    Type: AWS::CodeBuild::Project
+    DependsOn:
+      - CodeBuildpolicy
+    Properties:
+      Artifacts:
+        Type: codepipeline
+        Packaging: zip
+      Description: !Join
+        - ""
+        - - "CodeBuild Project for "
+          - !Ref ProjectId
+      ServiceRole: !Ref CodeBuildRole
+      Environment:
+        Type: LINUX_CONTAINER
+        Image: "aws/codebuild/amazonlinux2-x86_64-standard:5.0"
+        ComputeType: BUILD_GENERAL1_SMALL
+        EnvironmentVariables:
+          - Name: S3_BUCKET
+            Value: !Ref S3Bucket
+          - Name: WEBSITE_S3_PREFIX
+            Value: NoVal
+          - Name: WEBSITE_S3_BUCKET
+            Value: NoVal
+          - Name: PROJECT_ID
+            Value: !Ref ProjectId
+          - Name: ACCOUNT_ID
+            Value: !Ref "AWS::AccountId"
+          - Name: PARTITION
+            Value: !Ref "AWS::Partition"
+      Source:
+        Type: codepipeline
+      Name: !Ref ProjectId
 
   # If your pipeline will create resources through AWS CloudFormation as well as deploy your source code, then specify a role for AWS CloudFormation to use. These permissions dictate which runtime resources
   # AWS CloudFormation can create and modify on your behalf
@@ -53,6 +121,50 @@ Resources:
                 Effect: Allow
                 Resource: "*"
           PolicyName: CloudFormationRolePolicy
+
+  # This policy is applied to the amazon S3 bucket that AWS CodePipeline will use as your artifact store.
+  S3ArtifactBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    DependsOn:
+      - S3Bucket
+      - CodePipelineTrustRole
+      - CodeBuildRole
+      - CloudFormationTrustRole
+    Description: Setting Amazon S3 bucket policy for AWS CodePipeline access
+    Properties:
+      Bucket: !Ref S3Bucket
+      PolicyDocument:
+        Id: SSEAndSSLPolicy
+        Version: 2012-10-17
+        Statement:
+          - Sid: WhitelistedGet
+            Action:
+              - s3:GetObject
+              - s3:GetObjectVersion
+              - s3:GetBucketVersioning
+            Condition:
+              Bool:
+                aws:SecureTransport: false
+            Effect: Allow
+            Principal:
+              AWS:
+                - !GetAtt CodePipelineTrustRole.Arn
+                - !GetAtt CodeBuildRole.Arn
+                - !GetAtt CloudFormationTrustRole.Arn
+            Resource:
+              - !Sub "arn:aws:s3:::${S3Bucket}"
+              - !Sub "arn:aws:s3:::${S3Bucket}/*"
+          - Sid: WhitelistedPut
+            Action:
+              - s3:PutObject
+            Effect: Allow
+            Principal:
+              AWS:
+                - !GetAtt CodePipelineTrustRole.Arn
+                - !GetAtt CodeBuildRole.Arn
+            Resource:
+              - !Sub "arn:aws:s3:::${S3Bucket}"
+              - !Sub "arn:aws:s3:::${S3Bucket}/*"
 
   S3Bucket:
     Type: AWS::S3::Bucket
@@ -101,47 +213,6 @@ Resources:
                 Resource:
                   - !GetAtt CloudFormationTrustRole.Arn
 
-  # This policy is applied to the amazon S3 bucket that AWS CodePipeline will use as your artifact store.
-  # GitHub Actions will need access to S3 bucket for uploading build artifacts
-  S3ArtifactBucketPolicy:
-    Type: AWS::S3::BucketPolicy
-    DependsOn:
-      - S3Bucket
-      - CodePipelineTrustRole
-      - CloudFormationTrustRole
-    Description: Setting Amazon S3 bucket policy for AWS CodePipeline access
-    Properties:
-      Bucket: !Ref S3Bucket
-      PolicyDocument:
-        Id: SSEAndSSLPolicy
-        Version: 2012-10-17
-        Statement:
-          - Sid: WhitelistedGet
-            Action:
-              - s3:GetObject
-              - s3:GetObjectVersion
-              - s3:GetBucketVersioning
-            Condition:
-              Bool:
-                aws:SecureTransport: false
-            Effect: Allow
-            Principal:
-              AWS:
-                - !GetAtt CodePipelineTrustRole.Arn
-                - !GetAtt CloudFormationTrustRole.Arn
-            Resource:
-              - !Sub "arn:aws:s3:::${S3Bucket}"
-              - !Sub "arn:aws:s3:::${S3Bucket}/*"
-          - Sid: WhitelistedPut
-            Action:
-              - s3:PutObject
-            Effect: Allow
-            Principal:
-              AWS:
-                - !GetAtt CodePipelineTrustRole.Arn
-            Resource:
-              - !Sub "arn:aws:s3:::${S3Bucket}"
-              - !Sub "arn:aws:s3:::${S3Bucket}/*"
 
   # This pipeline contains three Stages: Source, Build, and Deploy.
   ProjectPipeline:
@@ -149,6 +220,7 @@ Resources:
     DependsOn:
       - CodePipelineTrustRole
       - S3Bucket
+      - CodeBuildProject
       - CloudFormationTrustRole
     Description: Creating a deployment pipeline for your project in AWS CodePipeline
     Properties:
@@ -162,18 +234,34 @@ Resources:
               - ActionTypeId:
                   Category: Source
                   Owner: AWS
-                  Provider: S3
+                  Provider: CodeStarSourceConnection
                   Version: 1
                 Configuration:
-                  S3Bucket: !Ref S3Bucket
-                  S3ObjectKey: !Sub "${ProjectId}-build-artifacts.zip"
-                  PollForSourceChanges: false
+                  BranchName: main
+                  ConnectionArn: !Sub "arn:aws:codeconnections:${AWS::Region}:${AWS::AccountId}:connection/${GithubConnectionUuid}"
+                  FullRepositoryId: !Sub "${GithubOrg}/${GithubRepo}"
+                  OutputArtifactFormat: CODE_ZIP
                 InputArtifacts: []
-                Name: BuildArtifacts
+                Name: ApplicationSource
+                OutputArtifacts:
+                  - Name: !Sub "${ProjectId}-SourceArtifact"
+                RunOrder: 1
+            Name: Source
+          - Actions:
+              - ActionTypeId:
+                  Category: Build
+                  Owner: AWS
+                  Provider: CodeBuild
+                  Version: 1
+                Configuration:
+                  ProjectName: !Ref CodeBuildProject
+                InputArtifacts:
+                  - Name: !Sub "${ProjectId}-SourceArtifact"
+                Name: PackageExport
                 OutputArtifacts:
                   - Name: !Sub "${ProjectId}-BuildArtifact"
                 RunOrder: 1
-            Name: Source
+            Name: Build
           - Actions:
               - ActionTypeId:
                   Category: Deploy
@@ -188,8 +276,10 @@ Resources:
                   StackName: !Sub "${ProjectId}-lambda"
                   # These are the parameters that will be set in your AWS CloudFormation stack
                   ParameterOverrides: !Sub '{"ProjectId":"${ProjectId}"}'
-                  # GitHub Actions will build and upload the CloudFormation template
-                  TemplatePath: !Sub "${ProjectId}-BuildArtifact::template-export.yml"
+                  # Our sample AWS Codebuild project uses the following yml file to run a build,
+                  # and then AWS CodeBuiild places the file into build artifact.
+                  # Modify this line to point to a different yml file you want AWS CodeBuild to use.
+                  TemplatePath: !Sub "${ProjectId}-buildArtifact::template-export.yml"
                 Name: GenerateChangeSet
                 InputArtifacts:
                   - Name: !Sub "${ProjectId}-BuildArtifact"

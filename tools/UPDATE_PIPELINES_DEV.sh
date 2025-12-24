@@ -58,12 +58,13 @@ then
     echo "$(basename $0) executing, skipping login..."
 else
     echo "$(basename $0) executing, login..."
-    aws sso login --profile $PROFILE
+    aws sso login --profile $
+    
+    
       check_error
 fi
 
 echo "$PIPELINE_FULL_STACK
-$PIPELINE_CDN_DNS
 $PIPELINE_LAMBDAS" | while read pipeline_name
 do
 
@@ -71,33 +72,34 @@ do
     echo "Updating PIPELINE = $PIPELINE"
 
 
-    echo "...update account number in pipeline before running..."
+    echo "...replace placeholders with real values before updating pipeline..."
 
     if test $BUILD_SYSTEM == "MAC"
     then
     #MAC
-    sed -i '' s/$ACCOUNT_NUMBER/_REPLACE-ACCOUNT_NUMBER_/g ../pipelines/${PIPELINE}.json #--# mac
+    sed -i '' s/_REPLACE_ACCOUNT_NUMBER_/$ACCOUNT_NUMBER/g ../pipelines/${PIPELINE}.json #--# mac
     check_error
     sed -i '' s/_REPLACE_ENV_/$ENV/g ../pipelines/${PIPELINE}.json #--# mac
     check_error
-    sed -i '' s/_REPLACE-GITHUB_CONN_UUID_/$GITHUB_CONN_UUID/g ../pipelines/${PIPELINE}.json #--# mac
+    sed -i '' s/_REPLACE_GITHUB_CONN_UUID_/$GITHUB_CONN_UUID/g ../pipelines/${PIPELINE}.json #--# mac
     check_error
-    sed -i '' s/_REPLACE_GITHUB_REPOID_/${CODESTAR_PROJECT_NAME}/g ../pipelines/${PIPELINE}.json #--# mac
-    sed -i '' s/${ORG_ID}/_REPLACE_GITHUB_ORGID_/g ../pipelines/${PIPELINE}.json #--#mac
+    sed -i '' s/_REPLACE_GITHUB_REPOID_/userdetails/g ../pipelines/${PIPELINE}.json #--# mac
+    check_error
+    sed -i '' s/_REPLACE_GITHUB_ORGID_/$ORG_ID/g ../pipelines/${PIPELINE}.json #--#mac
     check_error
 
-    elif test $BUILD_SYSTEM == "LINUX"
+    elif test $BUILD_SYSTEM == "sLINUX"
     then
     # LINUX
-    sed -i -e s/$ACCOUNT_NUMBER/_REPLACE_ACCOUNT_NUMBER_/g ../pipelines/${PIPELINE}.json #--# linux
+    sed -i -e s/_REPLACE_ACCOUNT_NUMBER_/$ACCOUNT_NUMBER/g ../pipelines/${PIPELINE}.json #--# linux
     check_error
-    sed -i -e s/$ENV/_REPLACE_ENV_/g ../pipelines/${PIPELINE}.json #--# mac
+    sed -i -e s/_REPLACE_ENV_/$ENV/g ../pipelines/${PIPELINE}.json #--# linux
     check_error
-    sed -i -e s/$GITHUB_CONN_UUID/_REPLACE_GITHUB_CONN_UUID_/g ../pipelines/${PIPELINE}.json #--# mac
+    sed -i -e s/_REPLACE_GITHUB_CONN_UUID_/$GITHUB_CONN_UUID/g ../pipelines/${PIPELINE}.json #--# linux
     check_error
-    sed -i -e s/${CODESTAR_PROJECT_NAME}/_REPLACE_GITHUB_REPOID_/g ../pipelines/${PIPELINE}.json #--# mac
+    sed -i -e s/_REPLACE_GITHUB_REPOID_/userdetails/g ../pipelines/${PIPELINE}.json #--# linux
     check_error
-    sed -i -e s/${ORG_ID}/_REPLACE_GITHUB_ORGID_/g ../pipelines/${PIPELINE}.json #--# mac
+    sed -i -e s/_REPLACE_GITHUB_ORGID_/$ORG_ID/g ../pipelines/${PIPELINE}.json #--# linux
     check_error
 
     fi

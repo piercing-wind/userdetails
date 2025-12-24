@@ -1,0 +1,86 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: IAM role for GitHub Actions OIDC authentication
+
+Parameters:
+  ProjectId:
+    Description: Name of your application
+    Type: String
+  GithubOrg:
+    Description: GitHub organization name
+    Type: String
+  GithubRepo:
+    Description: GitHub repository name
+    Type: String
+  CreateOIDCProvider:
+    Description: Whether to create a new OIDC provider (set to false if one already exists)
+    Type: String
+    Default: "true"
+    AllowedValues:
+      - "true"
+      - "false"
+
+Conditions:
+  ShouldCreateOIDCProvider: !Equals [!Ref CreateOIDCProvider, "true"]
+
+Resources:
+  GitHubOIDCProvider:
+    Type: AWS::IAM::OIDCIdentityProvider
+    Condition: ShouldCreateOIDCProvider
+    Properties:
+      Url: https://token.actions.githubusercontent.com
+      ClientIdList:
+        - sts.amazonaws.com
+      ThumbprintList:
+        - 6938fd4d98bab03faadb97b34396831e3780aea1
+        - 1c58a3a8518e8759bf075b76b750d4f2df264fcd
+
+  GitHubActionsRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub "${ProjectId}-GitHubActions-Role"
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Federated: !If 
+                - ShouldCreateOIDCProvider
+                - !Ref GitHubOIDCProvider
+                - !Sub "arn:${AWS::Partition}:iam::${AWS::AccountId}:oidc-provider/token.actions.githubusercontent.com"
+            Action: sts:AssumeRoleWithWebIdentity
+            Condition:
+              StringEquals:
+                token.actions.githubusercontent.com:aud: sts.amazonaws.com
+              StringLike:
+                token.actions.githubusercontent.com:sub: !Sub "repo:${GithubOrg}/${GithubRepo}:*"
+      Policies:
+        - PolicyName: GitHubActionsPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:GetObject
+                  - s3:PutObject
+                  - s3:DeleteObject
+                  - s3:ListBucket
+                Resource:
+                  - !Sub "arn:aws:s3:::${ProjectId}-${AWS::Region}-${AWS::AccountId}-pipeline-artifacts"
+                  - !Sub "arn:aws:s3:::${ProjectId}-${AWS::Region}-${AWS::AccountId}-pipeline-artifacts/*"
+              - Effect: Allow
+                Action:
+                  - codepipeline:StartPipelineExecution
+                  - codepipeline:GetPipelineExecution
+                  - codepipeline:GetPipelineState
+                Resource: !Sub "arn:aws:codepipeline:${AWS::Region}:${AWS::AccountId}:pipeline/${ProjectId}-Pipeline"
+              - Effect: Allow
+                Action:
+                  - sts:GetCallerIdentity
+                Resource: "*"
+
+Outputs:
+  GitHubActionsRoleArn:
+    Description: ARN of the IAM role for GitHub Actions
+    Value: !GetAtt GitHubActionsRole.Arn
+    Export:
+      Name: !Sub "${ProjectId}-GitHubActions-Role-Arn"

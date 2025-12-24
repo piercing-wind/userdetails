@@ -19,7 +19,7 @@ fi
 ##
 
 
-source ../build.conf
+source ./build.conf
   check_error
 
 
@@ -27,63 +27,40 @@ source ../build.conf
 export PROFILE=$DEV_PROFILE
 export ACCOUNT_NUMBER=$DEV_ACCOUNT_NUMBER
 export RELEASES_BUCKET="${RELEASES_BUCKET/_REPLACE_ACCOUNT_NUMBER_/"$ACCOUNT_NUMBER"}"
+export ENV=$DEV_ENVIRONMENT
+export GITHUB_CONN_UUID=$DEV_GITHUB_CONN_UUID
 
-
-
-##sso login
-if test "$1" == "SKIP_LOGIN"
-then
-    echo "$(basename $0) executing, skipping login..."
-else
-    echo "$(basename $0) executing, login..."
-    aws sso login --profile $PROFILE
-      check_error
-fi
+echo "$(basename $0) executing with profile: $PROFILE"
 
 echo "Create PROJECT= ${PROJECT_NAME}"
 
-
-if aws s3api head-bucket --bucket "$RELEASES_BUCKET" --region=$REGION --profile $PROFILE 2>/dev/null;
-then
-  echo "releases bucket exists :: ${RELEASES_BUCKET}"
-else
-    echo "releases bucket does NOT exist...creating bucket :: ${RELEASES_BUCKET}"
-    aws s3api create-bucket --bucket ${RELEASES_BUCKET} --region=${REGION} --profile $PROFILE
-        check_error 
-
-    echo "waiting till bucket get's created..."
-
-    aws s3api wait bucket-exists \
-        --bucket ${RELEASES_BUCKET} --region=$REGION --profile $PROFILE
-            check_error
-        echo "releases bucket created successfully "   
-
-fi
-
-    echo "...updating account number."
-    sed -i -e s/_REPLACE_ACCOUNT_NUMBER_/"$ACCOUNT_NUMBER"/g BASE_TOOLCHAIN/project_dev.json
-    check_error
-
-    aws cloudformation deploy \
-        --template-file BASE_TOOLCHAIN/toolchain.yml \
-        --stack-name "${PROJECT_NAME}-dev \
-        --parameter-overrides file://BASE_TOOLCHAIN/project_dev.json \
+    echo "Deploying CloudFormation stack..."
+    aws cloudformation create-stack \
+        --template-body file://tools/BASE_TOOLCHAIN/toolchain.yml \
+        --stack-name "${PROJECT_NAME}-dev" \
+        --parameters \
+            ParameterKey=ProjectId,ParameterValue="${PROJECT_NAME}" \
+            ParameterKey=Environment,ParameterValue="dev" \
+            ParameterKey=GithubOrg,ParameterValue="${ORG_ID}" \
+            ParameterKey=GithubRepo,ParameterValue="${PROJECT_NAME}" \
+            ParameterKey=GithubConnectionUuid,ParameterValue="${DEV_GITHUB_CONN_UUID}" \
         --capabilities CAPABILITY_NAMED_IAM \
         --region=$REGION \
         --profile $PROFILE
     check_error
-
-    echo "...sanitize back account number in project file after update..."
-    sed -i -e s/$ACCOUNT_NUMBER/_REPLACE_ACCOUNT_NUMBER_/g BASE_TOOLCHAIN/project_dev.json
+    
+    echo "Waiting for stack creation..."
+    aws cloudformation wait stack-create-complete \
+        --stack-name "${PROJECT_NAME}-dev" \
+        --region=$REGION \
+        --profile $PROFILE
     check_error
 
    echo ; echo ;
 
 
-   echo "done!
+   echo "done!"
    ####
-
-   "
 
 ##
 ## END

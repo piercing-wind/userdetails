@@ -89,7 +89,7 @@ Globals:
       # # The CORS preflight OPTIONS request will fail.
       # AddDefaultAuthorizerToCorsPreFlight: False
 
-Resources:
+Resources: 
 ##############################################
 ########
 ###### API GATEWAY
@@ -507,42 +507,3 @@ Outputs:
   ApiGatewayApiEndpoint:
     Description: "API ApiGatewayApi endpoint"
     Value: !Sub "https://${ApiGatewayApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/"
-################################################
-######
-###### IAM ROLES
-# LambdaExecutionrole:
-# Description: Creating service role in IAM role for AWS Lambda
-# Type: AWS::IAM::Role
-# Properties:
-#   RoleName: !Sub 'CodeStar-${ProjectId}-Execution${Stage}-BE'
-#   AssumeRolePolicyDocument:
-#     Statement:
-#    - Effect: Allow
-#      Principal:
-#        Service: ["lambda.amazonaws.com","ssm.amazonaws.com"]
-#      Action: sts:AssumeRole
-#   Path: /
-#   Policies:
-#    - PolicyName: hackCF
-#      PolicyDocument:
-#      Version: "2022-10-17"
-#       Statement:
-#         - Effect: Allow
-#           # Action: '*'
-#           Action: 'iam:PassRole'
-#           Resource: '*'
-#   ManagedPolicyArna:
-#   - !Sub 'arn:${AWS::Partition}:iam::aws:policy/service-role/AWSLambdaBasicExectionRole'
-#-# full lambda access
-#--# !Sub 'arn:${AWS::Partition}:iam::aws:policy/AWSLambdaFullAccess'
-#--#ADD Full dynamodb access:
-#--# - !Sub 'arn:${AWS::Partition}:iam::aws:policy/AmazonDynamoDBFullAccess'
-#--# states:ListExecutions:
-#--# - !Sub 'arn:${AWS::Partition}:iam::aws:policy/AWSStepFunctionsFullAccess'
-#--# ADD FULL SSM access:
-# -!Sub 'arn:${AWS::Partition}:iam::aws:policy/AmazonSSMFullAccess'
-#--# SSM Activation Code roles:
-#- !Sub 'arn:${AWS::Partition}:iam::aws:policy/AmazonSSMManagedInstanceCore'
-#- !Sub 'arn:${AWS::Partition}:iam::aws:policy/CloudWatchAgentServerPolicy'
-##--# PermissionsBoundary: !Sub 'arn:${AWS::Partition}:iam::${AWS::AccountId}:policy/CodeStar_${ProjectId}_PermissionsBoundary'
-##--## TODO: fine tune permission boundary

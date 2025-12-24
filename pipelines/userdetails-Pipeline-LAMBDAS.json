@@ -1,10 +1,10 @@
 {
   "pipeline": {
-    "name": "_REPLACE_GITHUB_REPOID_-Pipeline-LAMBDAS",
-    "roleArn": "arn:aws:iam::_REPLACE_ACCOUNT_NUMBER_:role/_REPLACE_GITHUB_REPOID_-Toolchain",
+    "name": "userdetails-Pipeline-LAMBDAS",
+    "roleArn": "arn:aws:iam::_REPLACE_ACCOUNT_NUMBER_:role/userdetails-Toolchain",
     "artifactStore": {
       "type": "S3",
-      "location": "_REPLACE_GITHUB_REPOID_-_REPLACE_ACCOUNT_NUMBER_-pipe"
+      "location": "userdetails-_REPLACE_ACCOUNT_NUMBER_-pipe"
     },
     "stages": [
       {
@@ -22,12 +22,12 @@
             "configuration": {
               "BranchName": "master",
               "ConnectionArn": "arn:aws:codeconnections:us-east-1:_REPLACE_ACCOUNT_NUMBER_:connection/_REPLACE_GITHUB_CONN_UUID_",
-              "FullRepositoryId": "_REPLACE_GITHUB_ORGID_/_REPLACE_GITHUB_REPOID_",
+              "FullRepositoryId": "_REPLACE_GITHUB_ORGID_/userdetails",
               "OutputArtifactFormat": "CODE_ZIP"
             },
             "outputArtifacts": [
               {
-                "name": "_REPLACE_GITHUB_REPOID_-SourceArtifact"
+                "name": "userdetails-SourceArtifact"
               }
             ],
             "inputArtifacts": [],
@@ -66,16 +66,16 @@
             },
             "runOrder": 1,
             "configuration": {
-              "ProjectName": "_REPLACE_GITHUB_REPOID_"
+              "ProjectName": "userdetails"
             },
             "outputArtifacts": [
               {
-                "name": "_REPLACE_GITHUB_REPOID_-BuildArtifact"
+                "name": "userdetails-BuildArtifact"
               }
             ],
             "inputArtifacts": [
               {
-                "name": "_REPLACE_GITHUB_REPOID_-SourceArtifact"
+                "name": "userdetails-SourceArtifact"
               }
             ]
           }
@@ -115,15 +115,15 @@
               "ActionMode": "CHANGE_SET_REPLACE",
               "Capabilities": "CAPABILITY_NAMED_IAM",
               "ChangeSetName": "pipeline-changeset",
-              "RoleArn": "arn:aws:iam::_REPLACE_ACCOUNT_NUMBER_:role/_REPLACE_GITHUB_REPOID_-CloudFormation",
-              "StackName": "_REPLACE_GITHUB_REPOID_-Lambdas",
-              "TemplateConfiguration": "_REPLACE_GITHUB_REPOID_-BuildArtifact::params/_REPLACE_ENV_/_REPLACE_GITHUB_REPOID_-parameters-lambdas.json",
-              "TemplatePath": "_REPLACE_GITHUB_REPOID_-BuildArtifact::_REPLACE_GITHUB_REPOID_-lambdas-export.yml"
+              "RoleArn": "arn:aws:iam::_REPLACE_ACCOUNT_NUMBER_:role/userdetails-CloudFormation",
+              "StackName": "userdetails-Lambdas",
+              "TemplateConfiguration": "userdetails-BuildArtifact::params/_REPLACE_ENV_/userdetails-parameters-lambdas.json",
+              "TemplatePath": "userdetails-BuildArtifact::userdetails-lambdas-export.yml"
             },
             "outputArtifacts": [],
             "inputArtifacts": [
               {
-                "name": "_REPLACE_GITHUB_REPOID_-BuildArtifact"
+                "name": "userdetails-BuildArtifact"
               }
             ],
             "region": "us-ease-1"
@@ -140,7 +140,7 @@
             "configuration": {
               "ActionMode": "CHANGE_SET_EXECUTE",
               "ChangeSetName": "pipeline-changeset",
-              "StackName": "_REPLACE_GITHUB_REPOID_-Lambdas"
+              "StackName": "userdetails-Lambdas"
             },
             "outputArtifacts": [],
             "inputArtifacts": [],
@@ -164,15 +164,15 @@
               "ActionMode": "CHANGE_SET_REPLACE",
               "Capabilities": "CAPABILITY_NAMED_IAM",
               "ChangeSeetName": "pipeline-changeset",
-              "RoleArn": "arn:aws:iam::_REPLACE_ACCOUNT_NUMBER_:role/_REPLACE_GITHUB_REPOID_-CloudFormation",
-              "StackName": "_REPLACE_GITHUB_REPOID_-ObsvLambda1",
-              "TemplateConfiguration": "_REPLACE_GITHUB_REPOID_-BuildArtifact::params/_REPLACE_ENV_/_REPLACE_GITHUB_REPOID_-parameters-observability-lambda-1.json",
-              "TemplatePath": "_REPLACE_GITHUB_REPOID_-BuildArtifact::_REPLACE_GITHUB_REPOID_-lambdas-observability-export.yml"
+              "RoleArn": "arn:aws:iam::_REPLACE_ACCOUNT_NUMBER_:role/userdetails-CloudFormation",
+              "StackName": "userdetails-ObsvLambda1",
+              "TemplateConfiguration": "userdetails-BuildArtifact::params/_REPLACE_ENV_/userdetails-parameters-observability-lambda-1.json",
+              "TemplatePath": "userdetails-BuildArtifact::userdetails-lambdas-observability-export.yml"
             },
             "outputArtifacts": [],
             "inputArtifacts": [
               {
-                "name": "_REPLACE_GITHUB_REPOID_-BuildArtifact"
+                "name": "userdetails-BuildArtifact"
               }
             ],
             "region": "us-east-1"
@@ -190,15 +190,15 @@
               "ActionMode": "CHANGE_SET_REPLACE",
               "Capabilities": "CAPABILITY_NAMED_IAM",
               "ChangeSetName": "pipeline-changeset",
-              "RoleArn": "arn:aws:iam::REPLACE_ACCOUNT_NUMBER_:role/_REPLACE_GITHUB_REPOID_-CloudFormation",
-              "StackName": "_REPLACE_GITHUB_REPOID_-ObsvLambda2",
-              "TemplateConfiguration": "_REPLACE_GITHUB_REPOID_-BuildArtifact::params/_REPLACE_ENV_/_REPLACE_GITHUB_REPOID_-parameters-observability-lamda-2.json",
-              "TemplatePath": "_REPLACE_GITHUB_REPOID_-BuildArtifact::_REPLACE_GITHUB_REPOID_-lambdas-observability-export.yml"
+              "RoleArn": "arn:aws:iam::REPLACE_ACCOUNT_NUMBER_:role/userdetails-CloudFormation",
+              "StackName": "userdetails-ObsvLambda2",
+              "TemplateConfiguration": "userdetails-BuildArtifact::params/_REPLACE_ENV_/userdetails-parameters-observability-lamda-2.json",
+              "TemplatePath": "userdetails-BuildArtifact::userdetails-lambdas-observability-export.yml"
             },
             "outputArtifacts": [],
             "inputArtifacts": [
               {
-                "name": "_REPLACE_GITHUB_REPOID_-BuildArtifact"
+                "name": "userdetails-BuildArtifact"
               }
             ],
             "region": "us-east-1"
@@ -215,7 +215,7 @@
             "configuration": {
               "ActionMode": "CHANGE_SET_EXECUTE",
               "ChangeSetName": "pipeline-changeset",
-              "StackName": "_REPLACE_GITHUB_REPOID_-ObsvLambda1"
+              "StackName": "userdetails-ObsvLambda1"
             },
             "outputArtifacts": [],
             "inputArtifacts": [],
@@ -233,7 +233,7 @@
             "configuration": {
               "ActionMode": "CHANGE_SET_EXECUTE",
               "ChangeSetName": "pipeline-changeset",
-              "StackName": "_REPLACE_GITHUB_REPOID_-ObsvLambda2"
+              "StackName": "userdetails-ObsvLambda2"
             },
             "outputArtifacts": [],
             "inputArtifacts": [],

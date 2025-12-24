@@ -1,0 +1,18 @@
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Action": [
+                "codestar-connections:*",
+                "codepipeline:*",
+                "codebuild:*",
+                "cloudformation:*",
+                "codeconnections:*",
+                "s3:*",
+                "iam:*"
+            ],
+            "Resource": "*"
+        }
+    ]
+}

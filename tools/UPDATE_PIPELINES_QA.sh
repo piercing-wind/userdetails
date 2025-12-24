@@ -63,7 +63,6 @@ else
 fi
 
 echo "$PIPELINE_FULL_STACK
-$PIPELINE_CDN_DNS
 $PIPELINE_LAMBDAS" | while read pipeline_name
 do
 

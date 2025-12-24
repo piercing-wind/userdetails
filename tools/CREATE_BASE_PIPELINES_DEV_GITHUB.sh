@@ -61,8 +61,8 @@ then
     echo "$(basename $0) executing, skipping login..."
 else
     echo "$(basename $0) executing, login..."
-    # aws sso login --profile $PROFILE
-    #   check_error
+    aws sso login --profile $PROFILE
+      check_error
 fi
 
 echo "$PIPELINE_FULL_STACK
