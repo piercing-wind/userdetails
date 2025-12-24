@@ -79,19 +79,10 @@ jobs:
         echo "Using S3 bucket: $S3_BUCKET"
         echo "Using Account ID: $ACCOUNT_ID"
         
-        # Create artifacts directory structure matching buildspec.yml
-        mkdir -p artifacts
-        
-        # Copy artifacts matching buildspec.yml artifacts section
-        cp template-export.yml artifacts/
-        cp params/dev/userdetails-parameters-lambdas.json artifacts/
-        # cp params/qa/userdetails-parameters-lambdas.json artifacts/
-        # cp params/prod/userdetails-parameters-lambdas.json artifacts/
-        
-        # Create a zip file with all build artifacts
-        cd artifacts
-        zip -r "../${PROJECT_ID}-build-artifacts.zip" .
-        cd ..
+        # Create a zip file with template and existing params directory
+        # template-export.yml was generated in previous step
+        # params/ directory already exists in the repo
+        zip -r "${PROJECT_ID}-build-artifacts.zip" template-export.yml params/
         
         # Upload to S3
         aws s3 cp "${PROJECT_ID}-build-artifacts.zip" "s3://${S3_BUCKET}/${PROJECT_ID}-build-artifacts.zip"
