@@ -26,16 +26,17 @@ source ./build.conf
 # Override with DEV
 export PROJECT_NAME=$PROJECT_NAME
 export PROFILE=$DEV_PROFILE
-export ACCOUNT_NUMBER=$DEV_ACCOUNT_NUMBER
-export RELEASES_BUCKET="${RELEASES_BUCKET/_REPLACE_ACCOUNT_NUMBER_/"$ACCOUNT_NUMBER"}"
+# export ACCOUNT_NUMBER=$DEV_ACCOUNT_NUMBER
+# export RELEASES_BUCKET="${RELEASES_BUCKET/_REPLACE_ACCOUNT_NUMBER_/"$ACCOUNT_NUMBER"}"
 export ENV=$DEV_ENVIRONMENT
-export GITHUB_CONN_UUID=$DEV_GITHUB_CONN_UUID
+# export GITHUB_CONN_UUID=$DEV_GITHUB_CONN_UUID
 
 echo "$(basename $0) executing with profile: $PROFILE"
 
 echo "Create PROJECT= ${PROJECT_NAME}"
 
 echo "Deploying IAM role that GitHub Actions will use..."
+echo "Using AWS CLI profile: $PROFILE"
 
 # Check if GitHub OIDC provider already exists
 echo "Checking if GitHub OIDC provider already exists..."
@@ -78,9 +79,6 @@ aws cloudformation deploy \
     --parameter-overrides \
         ProjectId="${PROJECT_NAME}" \
         Environment=$ENV \
-        GithubOrg="${ORG_ID}" \
-        GithubRepo="${PROJECT_NAME}" \
-        GithubConnectionUuid="${DEV_GITHUB_CONN_UUID}" \
     --capabilities CAPABILITY_NAMED_IAM \
     --region=$REGION \
     --profile $PROFILE
@@ -101,11 +99,6 @@ ROLE_ARN=$(aws cloudformation describe-stacks \
     --profile $PROFILE)
 echo "Add this to GitHub Secrets as AWS_ROLE_TO_ASSUME:"
 echo $ROLE_ARN
-
-
-
-echo ; echo ;
-
 
 echo "done!"
 ####
