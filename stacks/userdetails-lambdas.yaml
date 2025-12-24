@@ -89,7 +89,7 @@ Globals:
       # # The CORS preflight OPTIONS request will fail.
       # AddDefaultAuthorizerToCorsPreFlight: False
 
-Resources: 
+Resources:
 ##############################################
 ########
 ###### API GATEWAY
