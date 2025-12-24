@@ -62,8 +62,8 @@ jobs:
         ls -ltr
         
         # Package CloudFormation templates (matching buildspec.yml post_build)
-        aws cloudformation package --template stacks/userdetails-lambdas.yaml --s3-bucket $S3_BUCKET --output-template-file template-export.yml
-        aws cloudformation package --template stacks/userdetails-lambdas-observability.yaml --s3-bucket $S3_BUCKET --output-template-file userdetails-lambdas-observability-export.yml
+        aws cloudformation package --template-file stacks/userdetails-lambdas.yaml --s3-bucket $S3_BUCKET --output-template-file template-export.yml
+        aws cloudformation package --template-file stacks/userdetails-lambdas-observability.yaml --s3-bucket $S3_BUCKET --output-template-file userdetails-lambdas-observability-export.yml
         
         # Process parameter files (matching buildspec.yml sed commands)
         sed -i.bak "s/\$PARTITION\$/${PARTITION}/g;s/\$AWS_REGION\$/${AWS_REGION}/g;s/\$ACCOUNT_ID\$/${ACCOUNT_ID}/g;s/\$PROJECT_ID\$/${PROJECT_ID}/g" params/dev/userdetails-parameters-lambdas.json
