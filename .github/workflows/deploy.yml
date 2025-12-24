@@ -79,10 +79,20 @@ jobs:
         echo "Using S3 bucket: $S3_BUCKET"
         echo "Using Account ID: $ACCOUNT_ID"
         
-        # Create a zip file with template and existing params directory
-        # template-export.yml was generated in previous step
-        # params/ directory already exists in the repo
-        zip -r "${PROJECT_ID}-build-artifacts.zip" template-export.yml params/
+        # Debug: Show current directory structure
+        echo "Current directory:"
+        pwd
+        echo "Files in current directory:"
+        ls -la
+        echo "Checking params directory:"
+        ls -la params/dev/ || echo "params/dev does not exist"
+        
+        # Create a zip file with template and params
+        zip -r "${PROJECT_ID}-build-artifacts.zip" template-export.yml params/dev/
+        
+        # Debug: Show zip contents
+        echo "Zip file contents:"
+        unzip -l "${PROJECT_ID}-build-artifacts.zip"
         
         # Upload to S3
         aws s3 cp "${PROJECT_ID}-build-artifacts.zip" "s3://${S3_BUCKET}/${PROJECT_ID}-build-artifacts.zip"
