@@ -51,29 +51,26 @@ jobs:
         echo "AWS_DEFAULT_REGION is $AWS_REGION"
         echo "AWS_REGION is $AWS_REGION"
         echo "ACCOUNT_ID is $ACCOUNT_ID"
+
+        # List files before build
+        ls -a
+
+
         
         # Install Lambda dependencies (matching buildspec.yml)
         cd stacks/lambdas_nodejs/getCounty
         npm install
         cd -
         
+        # List files after dependency installation
+        ls -a
+
         echo "Entering POST_BUILD phase"
         pwd
         ls -ltr
         
-        # Package CloudFormation templates (matching buildspec.yml post_build)
+        # Package CloudFormation template - uploads Lambda code to S3 and modifies template
         aws cloudformation package --template-file stacks/userdetails-lambdas.yaml --s3-bucket $S3_BUCKET --output-template-file template-export.yml
-        aws cloudformation package --template-file stacks/userdetails-lambdas-observability.yaml --s3-bucket $S3_BUCKET --output-template-file userdetails-lambdas-observability-export.yml
-        
-        # Process parameter files (matching buildspec.yml sed commands)
-        sed -i.bak "s/\$PARTITION\$/${PARTITION}/g;s/\$AWS_REGION\$/${AWS_REGION}/g;s/\$ACCOUNT_ID\$/${ACCOUNT_ID}/g;s/\$PROJECT_ID\$/${PROJECT_ID}/g" params/dev/userdetails-parameters-lambdas.json
-        sed -i.bak "s/\$PARTITION\$/${PARTITION}/g;s/\$AWS_REGION\$/${AWS_REGION}/g;s/\$ACCOUNT_ID\$/${ACCOUNT_ID}/g;s/\$PROJECT_ID\$/${PROJECT_ID}/g" params/qa/userdetails-parameters-lambdas.json
-        sed -i.bak "s/\$PARTITION\$/${PARTITION}/g;s/\$AWS_REGION\$/${AWS_REGION}/g;s/\$ACCOUNT_ID\$/${ACCOUNT_ID}/g;s/\$PROJECT_ID\$/${PROJECT_ID}/g" params/prod/userdetails-parameters-lambdas.json
-        
-        sed -i.bak "s/\$PARTITION\$/${PARTITION}/g;s/\$AWS_REGION\$/${AWS_REGION}/g;s/\$ACCOUNT_ID\$/${ACCOUNT_ID}/g;s/\$PROJECT_ID\$/${PROJECT_ID}/g" params/dev/userdetails-parameters-lambdas-observability-lambda-1.json
-        sed -i.bak "s/\$PARTITION\$/${PARTITION}/g;s/\$AWS_REGION\$/${AWS_REGION}/g;s/\$ACCOUNT_ID\$/${ACCOUNT_ID}/g;s/\$PROJECT_ID\$/${PROJECT_ID}/g" params/qa/userdetails-parameters-lambdas-observability-lambda-2.json
-        sed -i.bak "s/\$PARTITION\$/${PARTITION}/g;s/\$AWS_REGION\$/${AWS_REGION}/g;s/\$ACCOUNT_ID\$/${ACCOUNT_ID}/g;s/\$PROJECT_ID\$/${PROJECT_ID}/g" params/prod/userdetails-parameters-lambdas-observability-lambda-1.json
-        sed -i.bak "s/\$PARTITION\$/${PARTITION}/g;s/\$AWS_REGION\$/${AWS_REGION}/g;s/\$ACCOUNT_ID\$/${ACCOUNT_ID}/g;s/\$PROJECT_ID\$/${PROJECT_ID}/g" params/prod/userdetails-parameters-lambdas-observability-lambda-2.json
         
         ls -la
 
@@ -91,7 +88,6 @@ jobs:
         cp params/dev/userdetails-parameters-lambdas.json artifacts/
         cp params/qa/userdetails-parameters-lambdas.json artifacts/
         cp params/prod/userdetails-parameters-lambdas.json artifacts/
-        cp userdetails-lambdas-observability-export.yml artifacts/
         
         # Create a zip file with all build artifacts
         cd artifacts
