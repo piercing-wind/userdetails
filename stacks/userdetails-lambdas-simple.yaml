@@ -42,6 +42,7 @@ Conditions:
   CreateLambdaSg: !And
     - !Condition HasVpc
     - !Not [!Condition HasSg]
+  HasDBSecrets: !Not [!Equals [!Ref DBSecrets, '']]
 
 Resources:
   
@@ -67,16 +68,19 @@ Resources:
             Action: sts:AssumeRole
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
-        - arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole
+        - !If [HasVpc, 'arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole', !Ref 'AWS::NoValue']
       Policies:
-        - PolicyName: SecretsManagerAccess
-          PolicyDocument:
-            Version: '2012-10-17'
-            Statement:
-              - Effect: Allow
-                Action:
-                  - secretsmanager:GetSecretValue
-                Resource: !Ref DBSecrets
+        - !If
+          - HasDBSecrets
+          - PolicyName: SecretsManagerAccess
+            PolicyDocument:
+              Version: '2012-10-17'
+              Statement:
+                - Effect: Allow
+                  Action:
+                    - secretsmanager:GetSecretValue
+                  Resource: !Ref DBSecrets
+          - !Ref AWS::NoValue
         - PolicyName: S3Access
           PolicyDocument:
             Version: '2012-10-17'
