@@ -160,7 +160,7 @@ getCounty:
   Properties:
     FunctionName: !Sub "${ProjectId}-${Stage}-lamda-getCounty"
     Handler: index-getCounty.handler
-    CodeUri: ./lamdas_nodejs/getCounty
+    CodeUri: ./lambdas_nodejs/getCounty
     VpcConfig:
       SubnetIds: !Ref SubnetIds
       SecurityGroupIds: !Ref SecurityGroupIds
@@ -281,7 +281,7 @@ updateConfig:
   Properties:
     FunctionName: !Sub "${ProjectId}-${Stage}-lambda-updateCounty"
     Handler: index-updateCounty.handler
-    CodeUri: ./lamdas_nodejs/updateCounty
+    CodeUri: ./lambdas_nodejs/updateCounty
     VpcConfig:
       SubnetIds: !Ref SubnetIds
       SecurityGroupIds: !Ref SecurityGroupIds
