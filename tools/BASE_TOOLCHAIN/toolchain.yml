@@ -37,6 +37,8 @@ Resources:
                   - iam:*
                   - apigateway:*
                   - logs:*
+                  - s3:GetObject
+                  - s3:GetObjectVersion
                   - ec2:CreateSecurityGroup
                   - ec2:DeleteSecurityGroup
                   - ec2:DescribeSecurityGroups
