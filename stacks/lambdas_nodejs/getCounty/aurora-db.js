@@ -73,12 +73,12 @@ async function initPool() {
         user: config.user,
         password: config.password,
         // Use SSL for AWS RDS (skip only for local development)
-        // ...(config.host !== 'localhost' && 
-        //     config.host !== 'host.docker.internal' && {
-        //     ssl: {
-        //         rejectUnauthorized: false  // Accept self-signed certificates
-        //     }
-        // }),
+        ...(config.host !== 'localhost' && 
+            config.host !== 'host.docker.internal' && {
+            ssl: {
+                rejectUnauthorized: false  // Accept self-signed certificates
+            }
+        }),
         // Connection pool settings
         max: 2, 
         idleTimeoutMillis: 30000, 
