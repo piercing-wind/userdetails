@@ -86,6 +86,7 @@ Resources:
 
   ApiGatewayUsagePlan:
     Type: AWS::ApiGateway::UsagePlan
+    DependsOn: ApiGatewayApidevStage
     Properties:
       UsagePlanName: !Sub "${ProjectId}-usage-plan"
       ApiStages:
