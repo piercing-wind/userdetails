@@ -9,7 +9,7 @@ let dbConfig = null;
 
 // Initialize Secrets Manager client (uses AWS SDK default region from Lambda environment)
 const secretsManager = new SecretsManagerClient({ 
-    region: process.env.AWS_REGION || 'ap-south-1' 
+    region: process.env.AWS_REGION || 'us-east-1' 
 });
 
 // Fetch database configuration from Secrets Manager

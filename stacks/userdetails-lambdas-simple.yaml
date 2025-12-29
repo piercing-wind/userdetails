@@ -1,5 +1,8 @@
+
 AWSTemplateFormatVersion: '2010-09-09'
-Description: Simple Lambda function with API Gateway
+Transform:
+  - AWS::Serverless-2016-10-31
+Description: Simple Lambda function with API Gateway (SAM format)
 
 Parameters:
   Environment:
@@ -15,31 +18,82 @@ Parameters:
     Description: Database master password
     Default: ''
   VpcId:
-    Type: String
+    Type: AWS::EC2::VPC::Id
     Description: VPC ID where Aurora cluster exists
     Default: ''
   SubnetIds:
-    Type: String
-    Description: Comma-separated list of subnet IDs (at least 2)
-    Default: ''
-  SecurityGroupId:
-    Type: String
-    Description: Security Group ID of Aurora cluster (required if using VPC)
-    Default: ''
+    Type: List<AWS::EC2::Subnet::Id>
+    Description: List of subnet IDs (at least 2)
+    Default: []
+  SecurityGroupIds:
+    Type: List<AWS::EC2::SecurityGroup::Id>
+    Description: List of Security Group IDs for Lambda (required if using VPC)
+    Default: []
+  # ApiVpcEndpoints:
+  #   Type: List<String>
+  #   Description: Enter the VPC Endpoint IDs for private API Gateway (optional)
+  #   Default: []
 
-Conditions:
-  HasVpc: !Not [!Equals [!Ref VpcId, '']]
-  HasSg: !Not [!Equals [!Ref SecurityGroupId, '']]
-  HasVpcAndSg: !And
-    - !Condition HasVpc
-    - !Condition HasSg
-  CreateLambdaSg: !And
-    - !Condition HasVpc
-    - !Not [!Condition HasSg]
-  HasDBSecrets: !Not [!Equals [!Ref DBSecrets, '']]
+Globals:
+  Function:
+    Runtime: nodejs20.x
+    Timeout: 30
+    MemorySize: 512
+    Environment:  
+      Variables:
+        ENVIRONMENT: !Ref Environment
+        PROJECT_ID: !Ref ProjectId
+        DB_SECRET_ARN: !Ref DBSecrets
 
 Resources:
-  
+  ApiGatewayApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: dev
+      Cors:
+        AllowMethods: "'GET,HEAD,OPTIONS'"
+        AllowHeaders: "'Content-Type,X-Amz-Date,X-Amz-Security-Token,Authorization,X-Api-Key,X-Requested-With,Accept,Access-Control-Allow-Methods,access-Control-Allow-Origin,Access-Control-Allow-Headers'"
+        AllowOrigin: "'*'"
+      EndpointConfiguration:
+        Type: REGIONAL
+      # To make it PRIVATE, uncomment below and provide ApiVpcEndpoints
+      # EndpointConfiguration:
+      #   Type: PRIVATE
+      #   VPCEndpointIds: !Ref ApiVpcEndpoints
+
+  GetDataFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub '${ProjectId}-${Environment}-lambda'
+      Handler: index.handler
+      CodeUri: ./lambdas_nodejs/getCounty
+      VpcConfig:
+        SubnetIds: !Ref SubnetIds
+        SecurityGroupIds: !Ref SecurityGroupIds
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Events:
+        GetRegion:
+          Type: Api
+          Properties:
+            Path: /getRegion
+            Method: get
+            RestApiId: !Ref ApiGatewayApi
+
+  ApiGatewayUsagePlan:
+    Type: AWS::ApiGateway::UsagePlan
+    Properties:
+      UsagePlanName: !Sub "${ProjectId}-usage-plan"
+      ApiStages:
+        - ApiId: !Ref ApiGatewayApi
+          Stage: dev
+      Description: "Usage plan for API access with rate limiting"
+      Quota:
+        Limit: 10000
+        Period: MONTH
+      Throttle:
+        BurstLimit: 100
+        RateLimit: 50
+
   LambdaExecutionRole:
     Type: AWS::IAM::Role
     Properties:
@@ -52,137 +106,25 @@ Resources:
             Action: sts:AssumeRole
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
-        - !If [HasVpc, 'arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole', !Ref 'AWS::NoValue']
-
-  SecretsManagerPolicy:
-    Type: AWS::IAM::Policy
-    Condition: HasDBSecrets
-    Properties:
-      PolicyName: SecretsManagerAccess
-      Roles:
-        - !Ref LambdaExecutionRole
-      PolicyDocument:
-        Version: '2012-10-17'
-        Statement:
-          - Effect: Allow
-            Action:
-              - secretsmanager:GetSecretValue
-            Resource: !Ref DBSecrets
-
-  LambdaSecurityGroup:
-    Type: AWS::EC2::SecurityGroup
-    Condition: CreateLambdaSg
-    Properties:
-      GroupDescription: Security group for Lambda function
-      VpcId: !Ref VpcId
-      SecurityGroupEgress:
-        - IpProtocol: -1
-          CidrIp: 0.0.0.0/0
-          Description: Allow all outbound traffic
-      Tags:
-        - Key: Name
-          Value: !Sub '${ProjectId}-${Environment}-lambda-sg'
-  
-  SecretsManagerVPCEndpoint:
-    Type: AWS::EC2::VPCEndpoint
-    Condition: HasVpc
-    Properties:
-      VpcId: !Ref VpcId
-      ServiceName: !Sub 'com.amazonaws.${AWS::Region}.secretsmanager'
-      VpcEndpointType: Interface
-      SubnetIds: !Split [',', !Ref SubnetIds]
-      SecurityGroupIds:
-        - !If [HasSg, !Ref SecurityGroupId, !Ref LambdaSecurityGroup]
-      PrivateDnsEnabled: true
-
-  GetDataFunction:
-    Type: AWS::Lambda::Function
-    Properties:
-      FunctionName: !Sub '${ProjectId}-${Environment}-lambda'
-      Handler: index.handler
-      Runtime: nodejs20.x
-      Role: !GetAtt LambdaExecutionRole.Arn
-      MemorySize: 512
-      Timeout: 30
-      VpcConfig:
-        !If
-          - HasVpc
-          - SecurityGroupIds:
-              - !If [HasSg, !Ref SecurityGroupId, !Ref LambdaSecurityGroup]
-            SubnetIds: !Split [',', !Ref SubnetIds]
-          - !Ref AWS::NoValue
-      Environment:
-        Variables:
-          ENVIRONMENT: !Ref Environment
-          PROJECT_ID: !Ref ProjectId
-          DB_SECRET_ARN: !Ref DBSecrets
-      Code: ./lambdas_nodejs/getCounty
-
-  LambdaApiPermission:
-    Type: AWS::Lambda::Permission
-    Properties:
-      FunctionName: !Ref GetDataFunction
-      Action: lambda:InvokeFunction
-      Principal: apigateway.amazonaws.com
-      SourceArn: !Sub 'arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${ApiGateway}/*/*/*'
-
-  ApiGateway:
-    Type: AWS::ApiGateway::RestApi
-    Properties:
-      Name: !Sub '${ProjectId}-${Environment}-api'
-      Description: Simple API for Lambda function
-
-  ApiResource:
-    Type: AWS::ApiGateway::Resource
-    Properties:
-      RestApiId: !Ref ApiGateway
-      ParentId: !GetAtt ApiGateway.RootResourceId
-      PathPart: getRegion
-
-  ApiMethod:
-    Type: AWS::ApiGateway::Method
-    Properties:
-      RestApiId: !Ref ApiGateway
-      ResourceId: !Ref ApiResource
-      HttpMethod: GET
-      AuthorizationType: NONE
-      Integration:
-        Type: AWS_PROXY
-        IntegrationHttpMethod: POST
-        Uri: !Sub 'arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${GetDataFunction.Arn}/invocations'
-      MethodResponses:
-        - StatusCode: 200
-          ResponseParameters:
-            method.response.header.Access-Control-Allow-Origin: true
-
-  ApiDeployment:
-    Type: AWS::ApiGateway::Deployment
-    DependsOn: ApiMethod
-    Properties:
-      RestApiId: !Ref ApiGateway
-      StageName: !Ref Environment
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole
 
 Outputs:
   ApiUrl:
     Description: API Gateway endpoint URL
-    Value: !Sub 'https://${ApiGateway}.execute-api.${AWS::Region}.amazonaws.com/${Environment}/getRegion'
+    Value: !Sub 'https://${ApiGatewayApi}.execute-api.${AWS::Region}.amazonaws.com/dev/getRegion'
     Export:
       Name: !Sub '${ProjectId}-${Environment}-api-url'
-  
   LambdaFunctionArn:
     Description: Lambda Function ARN
     Value: !GetAtt GetDataFunction.Arn
     Export:
       Name: !Sub '${ProjectId}-${Environment}-lambda-arn'
-  
   LambdaFunctionName:
     Description: Lambda Function Name
     Value: !Ref GetDataFunction
     Export:
       Name: !Sub '${ProjectId}-${Environment}-lambda'
-  
   DatabaseSecretArn:
-    Condition: HasDBSecrets
     Description: Secrets Manager secret ARN for database credentials
     Value: !Ref DBSecrets
     Export:

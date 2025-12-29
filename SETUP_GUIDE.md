@@ -15,9 +15,11 @@ tools/BASE_TOOLCHAIN
   |       |_____ toolchain.yml
   |
   |_____________ create.sh  # Entry Point
+  |_____________ delete.sh 
 
 .gitIgnore
 build.conf
+permissions.json
 SETUP_GUIDE.md
 
 ## How to Setup
@@ -27,7 +29,7 @@ Step 1: Create new Repository on Github
 
 - Repository name* = userdetails // Or anyvalue which u want
 - Configurations =
-        Visibility = Public
+        Visibility = Public or Private // No changes needed in our code
         ADD README = OFF
         ADD .gitIgnore = No .gitIgnore
         ADD Licence = no license
@@ -132,27 +134,7 @@ AWS CLI User (running create.sh)
 
 ### Minimum permissions you need:
 
-**IAM Permissions:**
-- `iam:CreateOpenIDConnectProvider` - Create GitHub OIDC provider for keyless authentication
-- `iam:ListOpenIDConnectProviders` - Check if OIDC provider already exists
-- `iam:CreateRole` - Create CloudFormationTrustRole, CodePipelineTrustRole, GitHubActionsRole
-- `iam:PutRolePolicy` - Attach inline policies to the roles
-- `iam:AttachRolePolicy` - Attach AWS managed policies to roles
-- `iam:GetRole` - Verify role creation and retrieve role details
-
-**CloudFormation Permissions:**
-- `cloudformation:CreateStack` - Deploy toolchain and GitHub Actions IAM stacks
-- `cloudformation:UpdateStack` - Update stacks when configuration changes
-- `cloudformation:DescribeStacks` - Check stack status and retrieve outputs
-- `cloudformation:CreateChangeSet` - Preview changes before deployment
-- `cloudformation:ExecuteChangeSet` - Apply the changes to the stack
-
-**S3 Permissions:**
-- `s3:CreateBucket` - Create artifact storage bucket for pipeline
-- `s3:PutBucketPolicy` - Set bucket policy to allow access from pipeline roles
-
-**CodePipeline Permissions:**
-- `codepipeline:CreatePipeline` - Create the deployment pipeline
+    premissions.json file
 
 **Why needed:** One-time infrastructure setup. After running create.sh, these permissions are no longer used. The automated service roles (CloudFormation, CodePipeline, GitHub Actions) handle all subsequent operations.
 

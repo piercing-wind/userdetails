@@ -64,6 +64,7 @@ jobs:
         # 1. Zip the Lambda code (including node_modules)
         # 2. Upload the zip to S3
         # 3. Replace Code path with S3 URI in template-export.yml
+        
         echo "Packaging CloudFormation template..."
         aws cloudformation package \
           --template-file stacks/userdetails-lambdas-simple.yaml \
