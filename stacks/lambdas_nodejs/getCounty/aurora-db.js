@@ -14,9 +14,9 @@ const secretsManager = new SecretsManagerClient({
 
 // Fetch database configuration from Secrets Manager
 async function getDBConfig() {
-    // if (dbConfig) {
-    //     return dbConfig; // Return cached config
-    // }
+    if (dbConfig) {
+        return dbConfig; // Return cached config
+    }
 
     // For local development (SAM Local or direct execution), use environment variables
     if (process.env.DATABASE_URL || process.env.AWS_SAM_LOCAL === 'true' || !process.env.DB_SECRET_ARN) {
