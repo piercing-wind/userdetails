@@ -24,11 +24,11 @@ Parameters:
   SubnetIds:
     Type: List<AWS::EC2::Subnet::Id>
     Description: List of subnet IDs (at least 2)
-    Default: []
+    Default: ''
   SecurityGroupIds:
     Type: List<AWS::EC2::SecurityGroup::Id>
     Description: List of Security Group IDs for Lambda (required if using VPC)
-    Default: []
+    Default: ''
   # ApiVpcEndpoints:
   #   Type: List<String>
   #   Description: Enter the VPC Endpoint IDs for private API Gateway (optional)
