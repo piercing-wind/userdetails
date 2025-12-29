@@ -18,21 +18,24 @@ Parameters:
     Description: Database master password
     Default: ''
   VpcId:
-    Type: AWS::EC2::VPC::Id
-    Description: VPC ID where Aurora cluster exists
+    Type: String
+    Description: VPC ID where Aurora cluster exists (optional)
     Default: ''
   SubnetIds:
-    Type: List<AWS::EC2::Subnet::Id>
-    Description: List of subnet IDs (at least 2)
+    Type: CommaDelimitedList
+    Description: Comma-separated list of subnet IDs (at least 2, optional)
     Default: ''
   SecurityGroupIds:
-    Type: List<AWS::EC2::SecurityGroup::Id>
-    Description: List of Security Group IDs for Lambda (required if using VPC)
+    Type: CommaDelimitedList
+    Description: Comma-separated list of Security Group IDs for Lambda (optional)
     Default: ''
   # ApiVpcEndpoints:
   #   Type: List<String>
   #   Description: Enter the VPC Endpoint IDs for private API Gateway (optional)
   #   Default: []
+
+Conditions:
+  HasVpcConfig: !Not [!Equals [!Ref VpcId, '']]
 
 Globals:
   Function:
@@ -67,9 +70,11 @@ Resources:
       FunctionName: !Sub '${ProjectId}-${Environment}-lambda'
       Handler: index.handler
       CodeUri: ./lambdas_nodejs/getCounty
-      VpcConfig:
-        SubnetIds: !Ref SubnetIds
-        SecurityGroupIds: !Ref SecurityGroupIds
+      VpcConfig: !If
+        - HasVpcConfig
+        - SubnetIds: !Ref SubnetIds
+          SecurityGroupIds: !Ref SecurityGroupIds
+        - !Ref AWS::NoValue
       Role: !GetAtt LambdaExecutionRole.Arn
       Events:
         GetRegion:
