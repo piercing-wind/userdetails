@@ -17,6 +17,7 @@ exports.handler = async (event) => {
                 };
         }
         
+        
     } catch (error) {
         console.error('Database error:', error);
         
