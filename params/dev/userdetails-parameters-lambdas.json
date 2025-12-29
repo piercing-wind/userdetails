@@ -5,7 +5,7 @@
     "DBSecrets": "arn:aws:secretsmanager:us-east-1:851725398530:secret:test/postgres-u6a8tN",
     "VpcId": "",
     "SubnetIds": "",
-    "SecurityGroupId": ""
+    "SecurityGroupIds": ""
   },
   "Tags": {
     
