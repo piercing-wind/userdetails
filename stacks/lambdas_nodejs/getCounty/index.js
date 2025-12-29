@@ -1,21 +1,11 @@
-const { getDBConfig } = require('./aurora-db.js');
 const { getRegion } = require('./data/getRegion.js');
+
 exports.handler = async (event) => {
     
     try {
         switch (event.resource) {
             case '/getRegion':
-                // return await getRegion(event);
-                const result = await getDBConfig();
-                return {
-                    statusCode: 200,
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Access-Control-Allow-Origin': '*'
-                    },
-                    body: JSON.stringify(result)
-                };
-                
+                return await getRegion(event);
             default:
                 return {
                     statusCode: 404,
@@ -27,7 +17,6 @@ exports.handler = async (event) => {
                 };
         }
         
-
     } catch (error) {
         console.error('Database error:', error);
         
