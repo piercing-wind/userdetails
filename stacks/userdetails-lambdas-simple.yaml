@@ -2,7 +2,7 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Transform:
   - AWS::Serverless-2016-10-31
-Description: Simple Lambda function with API Gateway (SAM format)
+Description: Simple Lambda function with API Gateway
 
 Parameters:
   Environment:
@@ -134,7 +134,7 @@ Resources:
 Outputs:
   ApiUrl:
     Description: API Gateway endpoint URL
-    Value: !Sub 'https://${ApiGatewayApi}.execute-api.${AWS::Region}.amazonaws.com/${Stage}/${ProjectId}/${Environment}/region'
+    Value: !Sub 'https://${ApiGatewayApi}.execute-api.${AWS::Region}.amazonaws.com/v1/${ProjectId}/${Environment}/region'
     Export:
       Name: !Sub '${ProjectId}-${Environment}-api-url'
   LambdaFunctionArn:
