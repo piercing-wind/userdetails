@@ -74,25 +74,7 @@ function errorResponse(statusCode, code, message) {
 
 function mapLocalityData(locality, region) {
     return {
-        region: {
-            regionCode: region?.regionCode || null,
-            regionName: region?.regionName || null,
-            address: {
-                addressLine1: region?.address?.addressLine1 || null,
-                addressLine2: region?.address?.addressLine2 || null,
-                addressLine3: region?.address?.addressLine3 || null,
-                city: region?.address?.city || null,
-                state: region?.address?.state || null,
-                zipCode: region?.address?.zipCode || null,
-                phoneNumber: region?.address?.phoneNumber || null
-            },
-            assessor: {
-                name: region?.assessor?.name || null,
-                title: region?.assessor?.title || null,
-            },
-            regionBoard: region?.regionBoard || null,
-            ctbEmail: region?.ctbEmail || null
-        },
+        region,
         locality: {
             localityCode: locality?.locality,
             localityName: locality?.localityName,
