@@ -6,7 +6,15 @@ exports.handler = async (event) => {
         switch (event.resource) {
             case '/{ProjectId}/{Environment}/region/{id}':
             case '/{ProjectId}/{Environment}/region':
-                return await getRegion(event);
+                const result = await getRegion(event);
+                return {
+                    statusCode: 200,
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Access-Control-Allow-Origin': '*'
+                    },
+                    body: JSON.stringify(result)
+                }
 
             default:
                 return {
