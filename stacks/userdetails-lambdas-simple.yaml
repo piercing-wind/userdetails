@@ -92,7 +92,7 @@ Resources:
         GetRegionWithId:
           Type: Api
           Properties:
-            Path: !Sub '/${ApiVersion}/${ProjectId}/region/{id}'
+            Path: !Sub '/${ApiVersion}/${ProjectId}/region/${{id}}'
             Method: get
             RestApiId: !Ref ApiGatewayApi
         GetLocalities:
