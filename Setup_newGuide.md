@@ -16,9 +16,9 @@ from line 85 to 103 Events are for api enpoints
 add this to create new endpoints
 
 Paths will be as follows
-    /{ApiVersion}/{ProjectId}/region
-    /{ApiVersion}/{ProjectId}/region/{id}
-    /{ApiVersion}/{ProjectId}/locality
+    /${ApiVersion}/${ProjectId}/region
+    /${ApiVersion}/${ProjectId}/region/${{id}}
+    /${ApiVersion}/${ProjectId}/locality
 
 which will result in 
 .amazonaws.com/dev/v1/userdetails/region

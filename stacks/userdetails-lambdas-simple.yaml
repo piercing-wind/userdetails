@@ -86,19 +86,19 @@ Resources:
         GetRegion:
           Type: Api
           Properties:
-            Path: !Sub '/${ApiVersion}/${ProjectId}/region'
+            Path: /{ApiVersion}/{ProjectId}/region
             Method: get
             RestApiId: !Ref ApiGatewayApi
         GetRegionWithId:
           Type: Api
           Properties:
-            Path: !Sub '/${ApiVersion}/${ProjectId}/region/${{id}}'
+            Path: /{ApiVersion}/{ProjectId}/region/{id}
             Method: get
             RestApiId: !Ref ApiGatewayApi
         GetLocalities:
           Type: Api
           Properties:
-            Path: !Sub '/${ApiVersion}/${ProjectId}/locality'
+            Path: /{ApiVersion}/{ProjectId}/locality
             Method: get
             RestApiId: !Ref ApiGatewayApi
 
