@@ -6,8 +6,8 @@ exports.handler = async (event) => {
     try {
         let result;
         switch (event.resource) {
-            case '/{ProjectId}/{Environment}/region/{id}':
-            case '/{ProjectId}/{Environment}/region':
+            case '/v1/{ProjectId}/region/{id}':
+            case '/v1/{ProjectId}/region':
                 result = await getRegion(event);
                 return {
                     statusCode: 200,
@@ -17,7 +17,7 @@ exports.handler = async (event) => {
                     },
                     body: JSON.stringify(result)
                 }
-            case '/{ProjectId}/{Environment}/locality':
+            case '/v1/{ProjectId}/locality':
                 result = await getLocality(event);
                 return {
                     statusCode: 200,

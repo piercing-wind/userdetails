@@ -19,7 +19,7 @@ async function getRegion(request){
                 assessor_name, 
                 assessor_title, 
                 region_board, 
-                ctb_email FROM regiondatadev_schema."Region"`);
+                ctb_email FROM userdetaildev_schema."Region"`);
 
             // Map each region object in result.data to custom format
             const regionsData = Array.isArray(result.data)
@@ -58,7 +58,7 @@ async function getRegion(request){
             assessor_title, 
             region_board, 
             ctb_email 
-            FROM regiondatadev_schema."Region" WHERE region_code = $1`,
+            FROM userdetaildev_schema."Region" WHERE region_code = $1`,
             [regionCode]
         );
         

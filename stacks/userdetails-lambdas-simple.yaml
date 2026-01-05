@@ -13,6 +13,10 @@ Parameters:
     Type: String
     Description: Project identifier
     Default: userdetails
+  ApiVersion:
+    Type: String
+    Description: API Version
+    Default: v1
   DBSecrets:
     Type: String
     Description: Database master password
@@ -41,7 +45,7 @@ Conditions:
 
 Globals:
   Function:
-    Runtime: nodejs20.x
+    Runtime: nodejs24.x
     Timeout: 30
     MemorySize: 512
     Environment:  
@@ -54,7 +58,7 @@ Resources:
   ApiGatewayApi:
     Type: AWS::Serverless::Api
     Properties:
-      StageName: v1
+      StageName: dev
       Cors:
         AllowMethods: "'GET,HEAD,OPTIONS'"
         AllowHeaders: "'Content-Type,X-Amz-Date,X-Amz-Security-Token,Authorization,X-Api-Key,X-Requested-With,Accept,Access-Control-Allow-Methods,access-Control-Allow-Origin,Access-Control-Allow-Headers'"
@@ -82,30 +86,30 @@ Resources:
         GetRegion:
           Type: Api
           Properties:
-            Path: /{ProjectId}/{Environment}/region
+            Path: /{ApiVersion}/{ProjectId}/region # .com/dev/v1/userdetails/region
             Method: get
             RestApiId: !Ref ApiGatewayApi
         GetRegionWithId:
           Type: Api
           Properties:
-            Path: /{ProjectId}/{Environment}/region/{id}
+            Path: /{ApiVersion}/{ProjectId}/region/{id}
             Method: get
             RestApiId: !Ref ApiGatewayApi
         GetLocalities:
           Type: Api
           Properties:
-            Path: /{ProjectId}/{Environment}/locality
+            Path: /{ApiVersion}/{ProjectId}/locality
             Method: get
             RestApiId: !Ref ApiGatewayApi
 
   ApiGatewayUsagePlan:
     Type: AWS::ApiGateway::UsagePlan
-    DependsOn: ApiGatewayApiv1Stage
+    DependsOn: ApiGatewayApidevStage
     Properties:
       UsagePlanName: !Sub "${ProjectId}-usage-plan"
       ApiStages:
         - ApiId: !Ref ApiGatewayApi
-          Stage: v1
+          Stage: dev
       Description: "Usage plan for API access with rate limiting"
       Quota:
         Limit: 10000
@@ -140,7 +144,7 @@ Resources:
 Outputs:
   ApiUrl:
     Description: API Gateway endpoint URL
-    Value: !Sub 'https://${ApiGatewayApi}.execute-api.${AWS::Region}.amazonaws.com/v1/${ProjectId}/${Environment}/region'
+    Value: !Sub 'https://${ApiGatewayApi}.execute-api.${AWS::Region}.amazonaws.com/dev/${ApiVersion}/${ProjectId}/region'
     Export:
       Name: !Sub '${ProjectId}-${Environment}-api-url'
   LambdaFunctionArn:
