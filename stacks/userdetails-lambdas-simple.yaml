@@ -91,6 +91,12 @@ Resources:
             Path: /{ProjectId}/{Environment}/region/{id}
             Method: get
             RestApiId: !Ref ApiGatewayApi
+        GetLocalities:
+          Type: Api
+          Properties:
+            Path: /{ProjectId}/{Environment}/locality
+            Method: get
+            RestApiId: !Ref ApiGatewayApi
 
   ApiGatewayUsagePlan:
     Type: AWS::ApiGateway::UsagePlan

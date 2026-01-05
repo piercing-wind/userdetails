@@ -4,7 +4,7 @@ const { version } = require('../package.json');
 async function getRegion(request){
     try {
         // Read from path params first, then query params for backward compatibility
-        const regionCode = request.pathParameters?.id;
+        const regionCode = request?.pathParameters?.id;
 
         if(!regionCode){
             const result = await query(`SELECT 
