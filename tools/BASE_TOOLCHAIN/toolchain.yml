@@ -93,6 +93,7 @@ Resources:
                   - cloudformation:DescribeChangeSet
                   - cloudformation:ExecuteChangeSet
                   - cloudformation:DescribeStacks
+                  - cloudformation:DescribeStackEvents
                   - cloudformation:GetTemplate
                 Effect: Allow
                 Resource: "*"

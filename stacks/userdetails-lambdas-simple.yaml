@@ -138,7 +138,7 @@ Resources:
 Outputs:
   ApiUrl:
     Description: API Gateway endpoint URL
-    Value: !Sub 'https://${ApiGatewayApi}.execute-api.${AWS::Region}.amazonaws.com/dev/getRegion'
+    Value: !Sub 'https://${ApiGatewayApi}.execute-api.${AWS::Region}.amazonaws.com/${Stage}/${ProjectId}/${Environment}/region'
     Export:
       Name: !Sub '${ProjectId}-${Environment}-api-url'
   LambdaFunctionArn:
