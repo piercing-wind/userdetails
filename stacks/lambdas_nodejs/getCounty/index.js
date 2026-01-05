@@ -1,4 +1,4 @@
-const { getRegion } = require('./data/getRegion.js');
+const getRegion = require('./data/getRegion.js');
 
 exports.handler = async (event) => {
     
@@ -7,7 +7,7 @@ exports.handler = async (event) => {
             case '/{ProjectId}/{Environment}/region/{id}':
             case '/{ProjectId}/{Environment}/region':
                 return await getRegion(event);
-                
+
             default:
                 return {
                     statusCode: 404,

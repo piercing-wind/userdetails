@@ -17,10 +17,6 @@ Parameters:
     Type: String
     Description: Database master password
     Default: ''
-  Stage:
-    Type: String
-    Description: Deployment stage
-    Default: dev
   VpcId:
     Type: String
     Description: VPC ID where Aurora cluster exists (optional)
