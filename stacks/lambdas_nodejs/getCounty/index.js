@@ -4,8 +4,10 @@ exports.handler = async (event) => {
     
     try {
         switch (event.resource) {
-            case '/getRegion':
+            case '/{ProjectId}/{Environment}/region/{id}':
+            case '/{ProjectId}/{Environment}/region':
                 return await getRegion(event);
+                
             default:
                 return {
                     statusCode: 404,

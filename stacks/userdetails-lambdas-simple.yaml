@@ -17,6 +17,10 @@ Parameters:
     Type: String
     Description: Database master password
     Default: ''
+  Stage:
+    Type: String
+    Description: Deployment stage
+    Default: dev
   VpcId:
     Type: String
     Description: VPC ID where Aurora cluster exists (optional)
@@ -29,6 +33,8 @@ Parameters:
     Type: CommaDelimitedList
     Description: Comma-separated list of Security Group IDs for Lambda (optional)
     Default: ''
+
+  
   # ApiVpcEndpoints:
   #   Type: List<String>
   #   Description: Enter the VPC Endpoint IDs for private API Gateway (optional)
@@ -52,7 +58,7 @@ Resources:
   ApiGatewayApi:
     Type: AWS::Serverless::Api
     Properties:
-      StageName: dev
+      StageName: !Ref Stage
       Cors:
         AllowMethods: "'GET,HEAD,OPTIONS'"
         AllowHeaders: "'Content-Type,X-Amz-Date,X-Amz-Security-Token,Authorization,X-Api-Key,X-Requested-With,Accept,Access-Control-Allow-Methods,access-Control-Allow-Origin,Access-Control-Allow-Headers'"
@@ -80,18 +86,23 @@ Resources:
         GetRegion:
           Type: Api
           Properties:
-            Path: /getRegion
+            Path: /{ProjectId}/{Environment}/region
+            Method: get
+            RestApiId: !Ref ApiGatewayApi
+        GetRegionWithId:
+          Type: Api
+          Properties:
+            Path: /{ProjectId}/{Environment}/region/{id}
             Method: get
             RestApiId: !Ref ApiGatewayApi
 
   ApiGatewayUsagePlan:
     Type: AWS::ApiGateway::UsagePlan
-    DependsOn: ApiGatewayApidevStage
     Properties:
       UsagePlanName: !Sub "${ProjectId}-usage-plan"
       ApiStages:
         - ApiId: !Ref ApiGatewayApi
-          Stage: dev
+          Stage: !Ref Stage
       Description: "Usage plan for API access with rate limiting"
       Quota:
         Limit: 10000

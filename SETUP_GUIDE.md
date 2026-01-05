@@ -5,10 +5,9 @@ params\dev
         |__ userdetails-parameters-lambdas.json
 stack/lambdas_nodejs
   |        |_______ /getCounty   //everything inside
-  |        |_______ /updateCounty // everything inside
   |
   |________ github-actions-iam.yaml
-  |________ userdetails-lambdas.yaml
+  |________ userdetails-lambdas-simple.yaml
 
 
 tools/BASE_TOOLCHAIN
@@ -214,3 +213,12 @@ Flow:
     Writes logs to CloudWatch
     (If configured) Reads from Secrets Manager
     (If configured) Runs in VPC
+
+
+######
+ For Userdetails-lambda-yaml
+
+ You can remove from the line 217 to 277 and removing them doesnt require changes anywhere.
+
+ Because we are using the identical copy of the file with our requirements which is
+ userdetails-lambda-simple.yaml 
