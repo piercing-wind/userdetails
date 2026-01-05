@@ -10,7 +10,7 @@ async function getRegion(event) {
         count: result.count,
         data: result.data
     };
-    
+     
     return {
         statusCode: 200,
         headers: {
